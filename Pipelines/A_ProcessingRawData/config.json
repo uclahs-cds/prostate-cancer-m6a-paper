@@ -1,0 +1,155 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A-%j.o",
+        "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "build_reference_genome":
+    {
+      "t": "7-00:00:00",
+      "mem": "42G",
+      "c": "20",
+      "p": "himem",
+      "o": "log/snakemake-m6A-build_reference_genome-%j.o",
+      "e": "log/snakemake-m6A-build_reference_genome-%j.e"
+    },
+    "cutadapt":
+    {
+      "o": "log/snakemake-m6A-cutadapt-%j.o",
+      "e": "log/snakemake-m6A-cutadapt-%j.e"
+    },
+    "map_star":
+    {
+      "t": "7-00:00:00",
+      "mem": "48G",
+      "c": "20",
+      "p": "himem",
+      "o": "log/snakemake-m6A-map_star-%j.o",
+      "e": "log/snakemake-m6A-map_star-%j.e"
+    },
+    "create_master_bed12":
+    {
+        "o": "log/snakemake-m6A-create_master_bed12-%j.o",
+        "e": "log/snakemake-m6A-create_master_bed12-%j.e"
+    },
+    "index_bam":
+    {
+        "o": "log/snakemake-m6A-index_bam-%j.o",
+        "e": "log/snakemake-m6A-index_bam-%j.e"
+    },
+    "bam_stat":
+    {
+        "o": "log/snakemake-m6A-bam_stat-%j.o",
+        "e": "log/snakemake-m6A-bam_stat-%j.e"
+    },
+    "inner_distance":
+    {
+        "o": "log/snakemake-m6A-inner_distance-%j.o",
+        "e": "log/snakemake-m6A-inner_distance-%j.e"
+    },
+    "read_distribution":
+    {
+        "o": "log/snakemake-m6A-read_distribution-%j.o",
+        "e": "log/snakemake-m6A-read_distribution-%j.e"
+    },
+    "read_duplication":
+    {
+        "t": "7-00:00:00",
+        "mem": "42G",
+        "c": "20",
+        "p": "himem",
+        "o": "log/snakemake-m6A-read_duplication-%j.o",
+        "e": "log/snakemake-m6A-read_duplication-%j.e"
+    },
+    "split_bam":
+    {
+        "o": "log/snakemake-m6A-split_bam-%j.o",
+        "e": "log/snakemake-m6A-split_bam-%j.e"
+    },
+    "chrome_idx":
+    {
+        "o": "log/snakemake-m6A-chrome_idx-%j.o",
+        "e": "log/snakemake-m6A-chrome_idx-%j.e"
+    },
+    "flagstat":
+    {
+        "o": "log/snakemake-m6A-flagstat-%j.o",
+        "e": "log/snakemake-m6A-flagstat-%j.e"
+    },
+    "mark_duplicates":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "1",
+        "p": "himem",
+        "o": "log/snakemake-m6A-mark_duplicates-%j.o",
+        "e": "log/snakemake-m6A-mark_duplicates-%j.e"
+    },
+    "encode_qc_sort":
+    {
+        "o": "log/snakemake-m6A-encode_qc_sort-%j.o",
+        "e": "log/snakemake-m6A-encode_qc_sort-%j.e"
+    },
+    "encode_metrics":
+    {
+        "o": "log/snakemake-m6A-encode_metrics-%j.o",
+        "e": "log/snakemake-m6A-encode_metrics-%j.e"
+    },
+    "dupradar":
+    {
+        "c": "16",
+        "o": "log/snakemake-m6A-dupradar-%j.o",
+        "e": "log/snakemake-m6A-dupradar-%j.e"
+    },
+    "build_rsem_reference":
+    {
+        "t": "0-10:00:00",
+        "mem": "16G",
+        "c": "16",
+        "p": "all",
+        "o": "log/snakemake-m6A-build_rsem_reference-%j.o",
+        "e": "log/snakemake-m6A-build_rsem_reference-%j.e"
+    },
+    "rsem":
+    {
+        "t": "0-10:00:00",
+        "mem": "16G",
+        "c": "16",
+        "p": "all",
+        "o": "log/snakemake-m6A-rsem-%j.o",
+        "e": "log/snakemake-m6A-rsem-%j.e"
+    },
+    "forward_bw":
+    {
+        "c": "5",
+        "o": "log/snakemake-m6A-forward_bw-%j.o",
+        "e": "log/snakemake-m6A-forward_bw-%j.e"
+    },
+    "reverse_bw":
+    {
+        "c": "5",
+        "o": "log/snakemake-m6A-reverse_bw-%j.o",
+        "e": "log/snakemake-m6A-reverse_bw-%j.e"
+    },
+    "extract_EK12":
+    {
+        "o": "log/snakemake-m6A-extract_EK12-%j.o",
+        "e": "log/snakemake-m6A-extract_EK12-%j.e"
+    },
+    "calculate_EK12_reads":
+    {
+        "o": "log/snakemake-m6A-calculate_EK12_reads-%j.o",
+        "e": "log/snakemake-m6A-calculate_EK12_reads-%j.e"
+    },
+    "make_one_bigwig":
+    {
+        "c": "10",
+        "o": "log/snakemake-m6A-make_one_bigwig-%j.o",
+        "e": "log/snakemake-m6A-make_one_bigwig-%j.e"
+    },
+}

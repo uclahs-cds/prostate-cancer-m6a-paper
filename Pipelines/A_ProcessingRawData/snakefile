@@ -1,0 +1,370 @@
+import pandas as pd
+
+# samples gives you individual samples with {sample_id}_Input or {sample_id}_IP
+samples = pd.read_table("CPCGENE_Samples_List.txt")
+samples = samples["sample"].tolist()
+
+# The CPC-GENE Sample ids
+sample_id = pd.read_table("short_samples.txt")
+sample_id = sample_id["Sample"].tolist()
+
+bigwig_method = ['Input.reverse', 'Input.forward', 'IP.reverse', 'IP.forward']
+
+# Working Directory
+# DATADIR:
+DATADIR=""
+
+wildcard_constraints:
+    Sample_id="CPCG\d+"
+
+# Loading Modules
+shell.prefix("module load R/3.6.1 ; ")
+
+rule all:
+    input:
+        # expand("{DATADIR}/A_Trimmed_FASTQs/{Sample}.log", DATADIR=DATADIR, Sample=samples),
+        # "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrLength.txt".format(DATADIR=DATADIR),
+        # expand("{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/B_STAR_BAM/{Sample}_Log.final.out", DATADIR=DATADIR, Sample=samples),
+        # "{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12".format(DATADIR=DATADIR),
+        # expand("{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam.bai", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_idx.tsv", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_bam_stat.txt", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_inner_distance.e", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_infer_experiment.o", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_readDistribution.txt", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}.DupRate_plot.pdf", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_flagstat.tsv", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/D_ENCODE_METRICS/{Sample}.encode.metrics", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.dupRadar.rsav", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.metrics", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/BigWigs/{Sample}.forward.bigWig", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/BigWigs/{Sample}.reverse.bigWig", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/C_BAM_QC/{Sample}_EK12_bam_stat.txt", DATADIR=DATADIR, Sample=samples),
+        # expand("{DATADIR}/BigWigs/All.{bigwig_method}.bigWig", DATADIR=DATADIR, bigwig_method=bigwig_method),
+
+rule build_reference_genome:
+    conda:
+        "envs/mapping.yaml"
+    input:
+        hg38="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        ek12="{DATADIR}/GRCh38.p13_Build34/ek12.fa",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    params:
+        stardir="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/"
+    output:
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrLength.txt",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrName.txt",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/exonGeTrInfo.tab",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/geneInfo.tab",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/genomeParameters.txt",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/SAindex",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/sjdbList.fromGTF.out.tab",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/transcriptInfo.tab",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrNameLength.txt",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrStart.txt",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/exonInfo.tab",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/Genome",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/SA",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/sjdbInfo.txt",
+        "{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/sjdbList.out.tab"
+    shell:
+        "STAR "
+        "--runMode genomeGenerate "
+        "--genomeDir {params.stardir} "
+        "--runThreadN 10 "
+        "--genomeFastaFiles {input.hg38} {input.ek12} "
+        "--sjdbGTFfile {input.gtf} "
+        "--sjdbOverhang 149 "
+
+rule cutadapt:
+    input:
+        R1="{DATADIR}/FASTQs/{Sample}_R1.fastq.gz",
+        R2="{DATADIR}/FASTQs/{Sample}_R2.fastq.gz"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        R1=temp("{DATADIR}/A_Trimmed_FASTQs/{Sample}_R1.fastq.gz"),
+        R2=temp("{DATADIR}/A_Trimmed_FASTQs/{Sample}_R2.fastq.gz"),
+        log="{DATADIR}/A_Trimmed_FASTQs/{Sample}.log"
+    params:
+        min_len="50",
+        adapter_f="AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+        adapter_r="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+    shell:
+        "cutadapt "
+        "-a {params.adapter_f} "
+        "-A {params.adapter_r} "
+        "-m {params.min_len} "
+        "--report=minimal "
+        "-o {output.R1} "
+        "-p {output.R2} {input.R1} {input.R2} > {output.log}"
+
+rule map_star:
+    input:
+        genome="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/Genome",
+        R1="{DATADIR}/A_Trimmed_FASTQs/{Sample}_R1.fastq.gz",
+        R2="{DATADIR}/A_Trimmed_FASTQs/{Sample}_R2.fastq.gz",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        transcriptome_bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.toTranscriptome.out.bam",
+        final_log="{DATADIR}/B_STAR_BAM/{Sample}_Log.final.out",
+        log="{DATADIR}/B_STAR_BAM/{Sample}.o"
+    params:
+        sample="{Sample}",
+        index="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12"
+    shell:
+        "STAR "
+        "--runThreadN 10 "
+        "--genomeDir {params.index} "
+        "--chimSegmentMin 10 "
+        "--readFilesCommand zcat "
+        "--sjdbGTFfile {input.gtf} "
+        "--outFileNamePrefix {DATADIR}/B_STAR_BAM/{params.sample}_ "
+        "--outSAMorder Paired "
+        "--quantMode GeneCounts TranscriptomeSAM "
+        "--outSAMtype BAM SortedByCoordinate "
+        "--outReadsUnmapped Fastx "
+        "--outSAMattributes All "
+        "--twopassMode Basic "
+        "--readFilesIn {input.R1} {input.R2} > {output.log}"
+
+# https://www.biostars.org/p/340948/
+rule create_master_bed12:
+    input:
+        gff3="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gff3",
+    output:
+        genePred=temp("{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.genePred"),
+        bed12="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12"
+    shell:
+        "module load ucsctools/378; "
+        "gff3ToGenePred {input.gff3} {output.genePred}; "
+        "genePredToBed {output.genePred} {output.bed12} "
+
+# Indexing Bam File
+rule index_bam:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam.bai"
+    shell:
+        "samtools index {input} {output}"
+
+# Distribution of Reads to Chromosomes
+rule chrome_idx:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_idx.tsv"
+    shell:
+        "samtools idxstats {input} > {output}"
+
+# Quality Control
+rule bam_stat:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/qc.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_bam_stat.txt"
+    shell:
+        "bam_stat.py -i {input} > {output}"
+
+# Inner Distance
+rule inner_distance:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam.bai",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12"
+    conda:
+        "envs/qc.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_inner_distance.e"
+    shell:
+        "inner_distance.py -i {input.bam} "
+        "-o {DATADIR}/C_BAM_QC/{wildcards.Sample} "
+        "-r {input.bed} &> {output}"
+
+# Infer Experiment
+rule infer_experiment:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+    conda:
+        "envs/qc.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_infer_experiment.o"
+    shell:
+        "infer_experiment.py -i {input.bam} "
+        "-r {input.bed} > {output}"
+
+rule read_distribution:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_readDistribution.txt"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "read_distribution.py "
+        "-r {input.bed} "
+        "-i {input.bam} > {output}"
+
+rule read_duplication:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}.DupRate_plot.pdf"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "read_duplication.py "
+        "-i {input} "
+        "-o {DATADIR}/C_BAM_QC/{wildcards.Sample}"
+
+rule flagstat:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.toTranscriptome.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_flagstat.tsv"
+    shell:
+        "samtools flagstat "
+        "-O tsv "
+        "{input.bam} > "
+        "{output}"
+
+rule mark_duplicates:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    output:
+        metrics="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.metrics",
+        bam=temp("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.bam"),
+        bai=temp("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.bai"),
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "picard MarkDuplicates "
+        "I={input} "
+        "O={output.bam} "
+        "CREATE_INDEX=true "
+        "MAX_FILE_HANDLES=1000 "
+        "SORTING_COLLECTION_SIZE_RATIO=0.1 "
+        "VALIDATION_STRINGENCY=SILENT "
+        "REMOVE_DUPLICATES=false "
+        "M={output.metrics}"
+        # bam="{DATADIR}/PicardMarkDup_BAMs/{Sample_id}.bam",
+
+rule dupradar:
+    input:
+        bam="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.bam",
+        bai="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.bai",
+    params:
+        "{Sample}"
+    output:
+        "{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.dupRadar.rsav"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/150_dupRadar.R "
+        "{params} "
+
+
+rule encode_qc_sort:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample}.sorted.bam")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "samtools sort -n {input.bam} "
+        "-o {output}"
+
+rule encode_metrics:
+    input:
+        "{DATADIR}/tmpdir/{Sample}.sorted.bam"
+    output:
+        "{DATADIR}/D_ENCODE_METRICS/{Sample}.encode.metrics"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        """bedtools bamtobed -bedpe -i {input} | awk 'BEGIN{{OFS="\\t"}}{{print $1,$2,$4,$6,$9,$10}}' | grep -v 'chrM' | grep -v 'chrEK12' """
+        """| sort | uniq -c | awk 'BEGIN{{OFS="\\t";mt=0;m0=0;m1=0;m2=0}} ($1==1){{m1=m1+1}} ($1==2){{m2=m2+1}} {{m0=m0+1}} {{mt=mt+$1}} END{{print mt,m0,m1,m2,m0/mt,m1/m0,m1/m2}}' > {output}"""
+
+rule forward_bw:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam.bai"
+    output:
+        bigWig="{DATADIR}/BigWigs/{Sample}.forward.bigWig"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bamCoverage "
+        "--filterRNAstrand forward "
+        "--normalizeUsing RPKM "
+        "-p 5 "
+        "-b {input.bam} "
+        "-o {output.bigWig}"
+
+rule reverse_bw:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam.bai"
+    output:
+        bigWig="{DATADIR}/BigWigs/{Sample}.reverse.bigWig"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bamCoverage "
+        "--filterRNAstrand reverse "
+        "--normalizeUsing RPKM "
+        "-p 5 "
+        "-b {input.bam} "
+        "-o {output.bigWig}"
+
+# Extract EK12 Reads from BAM File
+rule extract_EK12:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam.bai"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample}_EK12.bam")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "samtools view -b {input} chrEK12 > {output}"
+
+rule calculate_EK12_reads:
+    input:
+        "{DATADIR}/tmpdir/{Sample}_EK12.bam"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_EK12_bam_stat.txt"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bam_stat.py -i {input} > {output}"
+
+rule make_one_bigwig:
+    input:
+        expand("{DATADIR}/BigWigs/{Sample_id}_{bigwig_method}.bigWig", DATADIR=DATADIR, bigwig_method=bigwig_method, Sample_id=sample_id)
+    output:
+        "{DATADIR}/BigWigs/All.{bigwig_method}.bigWig"
+    params:
+        short_input=' '.join(expand("{DATADIR}/BigWigs/{Sample_id}_{{bigwig_method}}.bigWig", DATADIR=DATADIR, Sample_id=sample_id))
+    shell:
+        "module load deeptools/3.2.1; "
+        "multiBigwigSummary bins "
+        "-b {params.short_input} "
+        "-bs 10000 "
+        "-p 10 "
+        "-o {output} "
