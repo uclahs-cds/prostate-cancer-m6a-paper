@@ -1,0 +1,153 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A-%j.o",
+        "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "extract_R1_reads":
+    {
+        "o": "log/snakemake-extract_R1_reads-%j.o",
+        "e": "log/snakemake-extract_R1_reads-%j.e"
+    },
+    "metpeak":
+    {
+        "o": "log/snakemake-m6A-MetPeak-%j.o",
+        "e": "log/snakemake-m6A-MetPeak-%j.e"
+    },
+    "exomePeak":
+    {
+        "o": "log/snakemake-m6A-exomePeak-%j.o",
+        "e": "log/snakemake-m6A-exomePeak-%j.e"
+    },
+    "macs":
+    {
+      "t": "0-24:00:00",
+      "mem": "42G",
+      "c": "1",
+      "p": "himem",
+      "o": "log/snakemake-m6A-macs-%j.o",
+      "e": "log/snakemake-m6A-macs-%j.e"
+    },
+    "MeTPeak_fasta_from_bed":
+    {
+        "o": "log/snakemake-m6A-MeTPeak_fasta_from_bed-%j.o",
+        "e": "log/snakemake-m6A-MeTPeak_fasta_from_bed-%j.e"
+    },
+    "MeTPeak_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-MeTPeak_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-MeTPeak_shuffle_bed-%j.e"
+    },
+    "MeTPeak_fasta_from_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-MeTPeak_fasta_from_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-MeTPeak_fasta_from_shuffle_bed-%j.e"
+    },
+    "MeTPeak_HOMER":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "16",
+        "p": "himem",
+        "o": "log/snakemake-m6A-MeTPeak_HOMER-%j.o",
+        "e": "log/snakemake-m6A-MeTPeak_HOMER-%j.e"
+    },
+    "exomePeak_fasta_from_bed":
+    {
+        "o": "log/snakemake-m6A-exomePeak_fasta_from_bed-%j.o",
+        "e": "log/snakemake-m6A-exomePeak_fasta_from_bed-%j.e"
+    },
+    "exomePeak_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-exomePeak_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-exomePeak_shuffle_bed-%j.e"
+    },
+    "exomePeak_fasta_from_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-exomePeak_fasta_from_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-exomePeak_fasta_from_shuffle_bed-%j.e"
+    },
+    "exomePeak_HOMER":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "16",
+        "p": "himem",
+        "o": "log/snakemake-m6A-exomePeak_HOMER-%j.o",
+        "e": "log/snakemake-m6A-exomePeak_HOMER-%j.e"
+    },
+    "MACS2_expand_summit":
+    {
+        "o": "log/snakemake-m6A-MACS2_expand_summit-%j.o",
+        "e": "log/snakemake-m6A-MACS2_expand_summit-%j.e"
+    },
+    "MACS2_fasta_from_bed":
+    {
+        "o": "log/snakemake-m6A-MACS2_fasta_from_bed-%j.o",
+        "e": "log/snakemake-m6A-MACS2_fasta_from_bed-%j.e"
+    },
+    "MACS2_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-MACS2_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-MACS2_shuffle_bed-%j.e"
+    },
+    "MACS2_fasta_from_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-MACS2_fasta_from_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-MACS2_fasta_from_shuffle_bed-%j.e"
+    },
+    "MACS2_HOMER":
+    {
+        "t": "1-00:00:00",
+        "mem": "16G",
+        "c": "16",
+        "p": "all",
+        "o": "log/snakemake-m6A-MACS2_HOMER-%j.o",
+        "e": "log/snakemake-m6A-MACS2_HOMER-%j.e"
+    },
+    "Bed12toBed6_MeTPeak":
+    {
+        "o": "log/snakemake-m6A-Bed12toBed6_MeTPeak-%j.o",
+        "e": "log/snakemake-m6A-Bed12toBed6_MeTPeak-%j.e"
+    },
+    "Bed12toBed6_ExomePeak":
+    {
+        "o": "log/snakemake-m6A-Bed12toBed6_ExomePeak-%j.o",
+        "e": "log/snakemake-m6A-Bed12toBed6_ExomePeak-%j.e"
+    },
+    "GuitarPlot":
+    {
+        "o": "log/snakemake-m6A-GuitarPlot-%j.o",
+        "e": "log/snakemake-m6A-GuitarPlot-%j.e"
+    },
+    "consistent_peaks_binomial":
+    {
+      "p": "himem",
+      "mem": "42G",
+      "o": "log/snakemake-m6A-consistent_peaks_binomial-%j.o",
+      "e": "log/snakemake-m6A-consistent_peaks_binomial-%j.e"
+    },
+    "individual_peak_joint_binomial":
+    {
+      "o": "log/snakemake-m6A-individual_peak_joint_binomial-%j.o",
+      "e": "log/snakemake-m6A-individual_peak_joint_binomial-%j.e"
+    },
+    "gc_content":
+    {
+      "t": "0-00:30:00",
+      "p": "veryhimem",
+      "mem": "100G",
+      "o": "log/snakemake-m6A-gc_content-%j.o",
+      "e": "log/snakemake-m6A-gc_content-%j.e"
+    },
+    "gc_shuffle_bed":
+    {
+        "o": "log/snakemake-m6A-gc_shuffle_bed-%j.o",
+        "e": "log/snakemake-m6A-gc_shuffle_bed-%j.e"
+    },
+}

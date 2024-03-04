@@ -1,0 +1,9 @@
+name: utils
+channels:
+  - conda-forge
+  - bioconda
+  - mvdbeek
+dependencies:
+  - ucsc_tools=332
+  - bedtools=2.27.1
+  - samtools=1.10

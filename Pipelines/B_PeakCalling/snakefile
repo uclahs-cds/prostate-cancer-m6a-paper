@@ -1,0 +1,239 @@
+import pandas as pd
+
+# samples gives you individual samples with {sample_id}_Input or {sample_id}_IP
+samples = pd.read_table("CPCGENE_Samples_List.txt")
+samples = samples["sample"].tolist()
+
+# The CPC-GENE Sample ids with both
+# sample_id = pd.read_table("/cluster/home/helenzhu/code/snakemake_M6A_2/CPCGENE_M6A_Samples_Complete.tsv")
+sample_id = pd.read_table("short_samples.txt")
+sample_id = sample_id["Sample"].tolist()
+
+# Working Directory
+# DATADIR:
+DATADIR=""
+
+# Loading Modules
+shell.prefix("module load R/3.6.1; ")
+
+rule all:
+    input:
+        # expand("{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.xls", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.xls", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak_shuffle.bed", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/I_HOMER_MetPeak/{Sample_id}/homerResults.html", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak_shuffle.bed", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/I_HOMER_exomePeak/{Sample_id}/homerResults.html", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed6", DATADIR=DATADIR, Sample_id=sample_id),
+        # expand("{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed6", DATADIR=DATADIR, Sample_id=sample_id),
+
+rule extract_R1_reads:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_Aligned.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample}_R1.bam")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "samtools "
+        "view -hbf 64 {input} > {output}"
+
+# MeTPeak
+rule metpeak:
+    input:
+        ip_bam="{DATADIR}/tmpdir/{Sample_id}_IP_R1.bam",
+        input_bam="{DATADIR}/tmpdir/{Sample_id}_Input_R1.bam",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    output:
+        "{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed",
+        "{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.xls"
+    shell:
+        "Rscript --vanilla Rscripts/MeTPeak.R "
+        "{wildcards.Sample_id} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/F_MeTPeak_Peaks/ "
+
+# ExomePeak
+rule exomepeak:
+    input:
+        ip_bam="{DATADIR}/tmpdir/{Sample_id}_IP_R1.bam",
+        input_bam="{DATADIR}/tmpdir/{Sample_id}_Input_R1.bam",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    output:
+        "{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed",
+        "{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.xls"
+    shell:
+        "Rscript --vanilla Rscripts/exomePeak.R "
+        "{wildcards.Sample_id} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/G_exomePeak_Peaks/ "
+
+# MeTPeak HOMER
+rule MeTPeak_fasta_from_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample_id}_MetPeak_Peaks.fa")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule MeTPeak_shuffle_bed:
+    input:
+        bed="{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed",
+        genomebed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+        chromsize="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrNameLength.txt",
+    output:
+        bed="{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak_shuffle.bed",
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "shuffleBed -incl {input.genomebed} "
+        "-seed 12345 "
+        "-noOverlapping "
+        "-i {input.bed} "
+        "-g {input.chromsize} "
+        "> {output.bed} "
+
+rule MeTPeak_fasta_from_shuffle_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak_shuffle.bed",
+    output:
+        temp("{DATADIR}/tmpdir/{Sample_id}_MetPeak_Peaks_shuffle.fa")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule MeTPeak_HOMER:
+    input:
+        peak_fasta="{DATADIR}/tmpdir/{Sample_id}_MetPeak_Peaks.fa",
+        random_fasta="{DATADIR}/tmpdir/{Sample_id}_MetPeak_Peaks_shuffle.fa"
+    params:
+        outdir="{DATADIR}/I_HOMER_MetPeak/{Sample_id}"
+    output:
+        "{DATADIR}/I_HOMER_MetPeak/{Sample_id}/homerResults.html"
+    conda:
+        "envs/motifs.yaml"
+    shell:
+        "findMotifs.pl "
+        "{input.peak_fasta} "
+        "fasta {params.outdir} "
+        "-fasta {input.random_fasta} "
+        "-p 8 "
+        "-len 5,6,7,8 "
+        "-S 8 "
+        "-rna "
+
+# ExomePeak HOMER
+rule exomePeak_fasta_from_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample_id}_exomePeak_Peaks.fa")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule exomePeak_shuffle_bed:
+    input:
+        bed="{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed",
+        genomebed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+        chromsize="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrNameLength.txt",
+    output:
+        bed="{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak_shuffle.bed",
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "shuffleBed -incl {input.genomebed} "
+        "-seed 12345 "
+        "-noOverlapping "
+        "-i {input.bed} "
+        "-g {input.chromsize} "
+        "> {output.bed} "
+
+rule exomePeak_fasta_from_shuffle_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak_shuffle.bed",
+    output:
+        temp("{DATADIR}/tmpdir/{Sample_id}_exomePeak_Peaks_shuffle.fa")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule exomePeak_HOMER:
+    input:
+        peak_fasta="{DATADIR}/tmpdir/{Sample_id}_exomePeak_Peaks.fa",
+        random_fasta="{DATADIR}/tmpdir/{Sample_id}_exomePeak_Peaks_shuffle.fa"
+    params:
+        outdir="{DATADIR}/I_HOMER_exomePeak/{Sample_id}"
+    output:
+        "{DATADIR}/I_HOMER_exomePeak/{Sample_id}/homerResults.html"
+    conda:
+        "envs/motifs.yaml"
+    shell:
+        "findMotifs.pl "
+        "{input.peak_fasta} "
+        "fasta {params.outdir} "
+        "-fasta {input.random_fasta} "
+        "-p 8 "
+        "-len 5,6,7,8 "
+        "-S 8 "
+        "-rna "
+
+rule Bed12toBed6_MeTPeak:
+    input:
+        "{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed"
+    conda:
+        "envs/utils.yaml"
+    output:
+        "{DATADIR}/F_MeTPeak_Peaks/{Sample_id}/peak.bed6"
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
+
+rule Bed12toBed6_ExomePeak:
+    input:
+        "{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed"
+    conda:
+        "envs/utils.yaml"
+    output:
+        "{DATADIR}/G_exomePeak_Peaks/{Sample_id}/peak.bed6"
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
