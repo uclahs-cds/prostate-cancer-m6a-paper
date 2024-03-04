@@ -17,9 +17,6 @@ DATADIR=""
 wildcard_constraints:
     Sample_id="CPCG\d+"
 
-# Loading Modules
-shell.prefix("module load R/3.6.1 ; ")
-
 rule all:
     input:
         # expand("{DATADIR}/A_Trimmed_FASTQs/{Sample}.log", DATADIR=DATADIR, Sample=samples),
@@ -36,7 +33,6 @@ rule all:
         # expand("{DATADIR}/C_BAM_QC/{Sample}.DupRate_plot.pdf", DATADIR=DATADIR, Sample=samples),
         # expand("{DATADIR}/C_BAM_QC/{Sample}_flagstat.tsv", DATADIR=DATADIR, Sample=samples),
         # expand("{DATADIR}/D_ENCODE_METRICS/{Sample}.encode.metrics", DATADIR=DATADIR, Sample=samples),
-        # expand("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.dupRadar.rsav", DATADIR=DATADIR, Sample=samples),
         # expand("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.metrics", DATADIR=DATADIR, Sample=samples),
         # expand("{DATADIR}/BigWigs/{Sample}.forward.bigWig", DATADIR=DATADIR, Sample=samples),
         # expand("{DATADIR}/BigWigs/{Sample}.reverse.bigWig", DATADIR=DATADIR, Sample=samples),
@@ -262,21 +258,6 @@ rule mark_duplicates:
         "VALIDATION_STRINGENCY=SILENT "
         "REMOVE_DUPLICATES=false "
         "M={output.metrics}"
-        # bam="{DATADIR}/PicardMarkDup_BAMs/{Sample_id}.bam",
-
-rule dupradar:
-    input:
-        bam="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.bam",
-        bai="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.bai",
-    params:
-        "{Sample}"
-    output:
-        "{DATADIR}/D_PicardMarkDup_BAMs/{Sample}.dupRadar.rsav"
-    shell:
-        "Rscript --vanilla "
-        "Rscripts/150_dupRadar.R "
-        "{params} "
-
 
 rule encode_qc_sort:
     input:
