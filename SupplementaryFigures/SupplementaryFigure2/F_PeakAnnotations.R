@@ -83,9 +83,10 @@ pg.plt = create.polygonplot(
   # adjust axes limits
   xlimits = c(0,1),
   ylimits = c(-1,4),
+  yat = seq(0, 4, 2),
   ylab.cex = 0,
   xlab.cex = 0,
-  yaxis.cex = 0,
+  yaxis.cex = 2,
   xaxis.cex = 0,
   yaxis.tck = 0,
   xaxis.tck = 0,
