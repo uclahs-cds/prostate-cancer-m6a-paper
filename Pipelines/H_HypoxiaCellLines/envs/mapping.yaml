@@ -1,0 +1,12 @@
+name: star_mapper
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - STAR=2.7.2
+  - fastqc=0.11.8
+  - cutadapt=2.8
+  - samtools=1.10
+  - RSeQC=3.0.1
+  - picard=2.21.7
+  - bedtools=2.27.1

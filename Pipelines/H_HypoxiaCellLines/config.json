@@ -1,0 +1,105 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A-%j.o",
+        "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "cutadapt":
+    {
+      "o": "log/cutadapt-%j.o",
+      "e": "log/cutadapt-%j.e"
+    },
+    "fastqc":
+    {
+      "o": "log/fastqc-%j.o",
+      "e": "log/fastqc-%j.e"
+    },
+    "map_star":
+    {
+      "t": "7-00:00:00",
+      "mem": "48G",
+      "c": "20",
+      "p": "himem",
+      "o": "log/map_star-%j.o",
+      "e": "log/map_star-%j.e"
+    },
+    "index_bam":
+    {
+      "o": "log/index_bam-%j.o",
+      "e": "log/index_bam-%j.e"
+    },
+    "inner_distance":
+    {
+      "o": "log/inner_distance-%j.o",
+      "e": "log/inner_distance-%j.e"
+    },
+    "infer_experiment":
+    {
+      "o": "log/infer_experiment-%j.o",
+      "e": "log/infer_experiment-%j.e"
+    },
+    "rsem":
+    {
+        "t": "0-10:00:00",
+        "c": "16",
+        "o": "log/rsem-%j.o",
+        "e": "log/rsem-%j.e"
+    },
+    "mark_duplicates":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "1",
+        "p": "himem",
+        "o": "log/snakemake-m6A-mark_duplicates-%j.o",
+        "e": "log/snakemake-m6A-mark_duplicates-%j.e"
+    },
+    "dupradar":
+    {
+        "c": "16",
+        "o": "log/snakemake-m6A-dupradar-%j.o",
+        "e": "log/snakemake-m6A-dupradar-%j.e"
+    },
+    "extract_R1_reads":
+    {
+      "o": "log/extract_R1_reads-%j.o",
+      "e": "log/extract_R1_reads-%j.e"
+    },
+    "metpeak":
+    {
+      "o": "log/metpeak-%j.o",
+      "e": "log/metpeak-%j.e"
+    },
+    "exomepeak":
+    {
+      "o": "log/exomepeak-%j.o",
+      "e": "log/exomepeak-%j.e"
+    },
+    "Bed12toBed6_MeTPeak":
+    {
+      "o": "log/Bed12toBed6_MeTPeak-%j.o",
+      "e": "log/Bed12toBed6_MeTPeak-%j.e"
+    },
+    "Bed12toBed6_ExomePeak":
+    {
+      "o": "log/Bed12toBed6_ExomePeak-%j.o",
+      "e": "log/Bed12toBed6_ExomePeak-%j.e"
+    },
+    "forward_bw":
+    {
+        "c": "5",
+        "o": "log/forward_bw-%j.o",
+        "e": "log/forward_bw-%j.e"
+    },
+    "reverse_bw":
+    {
+        "c": "5",
+        "o": "log/reverse_bw-%j.o",
+        "e": "log/reverse_bw-%j.e"
+    },
+}
