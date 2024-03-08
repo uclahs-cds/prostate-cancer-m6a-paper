@@ -2,8 +2,8 @@
 
 ## Pipelines
 Code for processing data
-TODO: Pipeline for QC compilation
-TODO: Pipeline for m6A-SAC-seq data
+* TODO: Pipeline for QC compilation
+* TODO: Pipeline for m6A-SAC-seq data
 
 **A_ProcessingRawData**
 * Read alignment and quality control
@@ -25,10 +25,13 @@ TODO: Pipeline for m6A-SAC-seq data
 * Calling joint peaks using HistogramZoo
 * Normalizing and adjusting IP data by Input data
 
-**F_AllelicImbalance**
+**F_AllelicImbalance** (TODO)
 * Generating allelic-specific reads for Figure 3A
 
 **G_m6AQTLAnalysis**
+* Quality control of germline variants
+* Testing Plink/PEER covariates
+* Generating input files and running MatrixQTL 
 
 **H_HypoxiaCellLines**
 * Processing hypoxia cell line meRIP-seq data
@@ -62,4 +65,4 @@ TODO: Pipeline for m6A-SAC-seq data
 * Supplementary Figures 4A & 4J were drawn rather than coded
 * The code for Supplementary Figure 4I is provided in the code for Figure 1A
 
-**Supplementary Figure 5**
+**Supplementary Figure 5** (TODO)
