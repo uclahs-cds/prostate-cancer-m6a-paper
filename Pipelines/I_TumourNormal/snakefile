@@ -1,0 +1,648 @@
+import pandas as pd
+
+samples = pd.read_table("Tumour.Normal.Config.tsv")
+samples = samples["Shortened.SampleID"].tolist()
+
+tumour_normal_samples = pd.read_table("Tumour.Normal.Samples.tsv")
+tumour_normal_samples = tumour_normal_samples["Sample"].tolist()
+
+xenograft_samples = pd.read_table("Xenograft.Samples.tsv")
+xenograft_samples = xenograft_samples["Sample"].tolist()
+
+ip_or_input = ['Input', 'IP']
+
+bigwig_method = ['Input.reverse', 'Input.forward', 'IP.reverse', 'IP.forward']
+
+# Working Directory
+DATADIR=""
+BAMDIR=""
+
+# Loading Modules
+shell.prefix("module load R/4.0.0 ; ")
+
+rule all:
+    input:
+        expand("{DATADIR}/A_Trimmed_FASTQs/{Sample}_{ip_or_input}.log", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Log.final.out", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam.bai", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_idx.tsv", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_bam_stat.txt", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_inner_distance.e", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_infer_experiment.o", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_readDistribution.txt", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}.DupRate_plot.pdf", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_flagstat.tsv", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/D_ENCODE_METRICS/{Sample}_{ip_or_input}.encode.metrics", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.dupRadar.rsav", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.metrics", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/E_RSEM_output/{Sample}_{ip_or_input}.isoforms.results", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/E_RSEM_output/{Sample}_{ip_or_input}.genes.results", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/BigWigs/{Sample}_{ip_or_input}.forward.bigWig", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/BigWigs/{Sample}_{ip_or_input}.reverse.bigWig", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_EK12_bam_stat.txt", DATADIR=DATADIR, Sample=samples, ip_or_input = ip_or_input),
+        expand("{DATADIR}/MeTPeak_Peaks/{sample}/peak.bed", DATADIR=DATADIR, sample=samples),
+        expand("{DATADIR}/exomePeak_Peaks/{sample}/peak.bed", DATADIR=DATADIR, sample=samples),
+        expand("{DATADIR}/I_HOMER_MetPeak/{sample}/homerResults.html", DATADIR=DATADIR, sample=samples),
+        expand("{DATADIR}/I_HOMER_exomePeak/{sample}/homerResults.html", DATADIR=DATADIR, sample=samples),
+        expand("{DATADIR}/R_GuitarPlot/{method}_{sample}.rsav", DATADIR=DATADIR, method = ['exomePeak', 'MeTPeak'], sample = samples),
+        "{DATADIR}/H_PeakCounts/Xenograft.counts".format(DATADIR=DATADIR),
+        "{DATADIR}/H_PeakCounts/TumourNormal.counts".format(DATADIR=DATADIR),
+
+rule motif_env:
+    conda:
+        "envs/motifs.yaml"
+    output:
+        "motif_env.txt"
+    shell:
+        "touch motif_env.txt"
+
+rule mapping_env:
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "mapping_env.txt"
+    shell:
+        "touch mapping_env.txt"
+
+rule qc_env:
+    conda:
+        "envs/qc.yaml"
+    output:
+        "qc_env.txt"
+    shell:
+        "touch qc_env.txt"
+
+rule count_reads:
+    conda:
+        "envs/count_reads.yaml"
+    output:
+        "count_reads_env.txt"
+    shell:
+        "touch count_reads_env.txt"
+
+rule cutadapt:
+    input:
+        R1="{DATADIR}/FASTQs/{Sample}_{ip_or_input}_R1.fastq.gz",
+        R2="{DATADIR}/FASTQs/{Sample}_{ip_or_input}_R2.fastq.gz"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        R1=temp("{DATADIR}/A_Trimmed_FASTQs/{Sample}_{ip_or_input}_R1.fastq.gz"),
+        R2=temp("{DATADIR}/A_Trimmed_FASTQs/{Sample}_{ip_or_input}_R2.fastq.gz"),
+        log="{DATADIR}/A_Trimmed_FASTQs/{Sample}_{ip_or_input}.log"
+    params:
+        min_len="50",
+        adapter_f="AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+        adapter_r="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+    shell:
+        "cutadapt "
+        "-a {params.adapter_f} "
+        "-A {params.adapter_r} "
+        "-m {params.min_len} "
+        "--report=minimal "
+        "-o {output.R1} "
+        "-p {output.R2} {input.R1} {input.R2} > {output.log}"
+
+# --outFilterMismatchNmax 30
+# This is default 10
+rule map_star:
+    input:
+        genome="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/Genome",
+        R1="{DATADIR}/A_Trimmed_FASTQs/{Sample}_{ip_or_input}_R1.fastq.gz",
+        R2="{DATADIR}/A_Trimmed_FASTQs/{Sample}_{ip_or_input}_R2.fastq.gz",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        transcriptome_bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.toTranscriptome.out.bam",
+        final_log="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Log.final.out",
+        log="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_.o"
+    params:
+        sample_concat="{Sample}_{ip_or_input}",
+        index="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12"
+    shell:
+        "STAR "
+        "--runThreadN 10 "
+        "--genomeDir {params.index} "
+        "--chimSegmentMin 10 "
+        "--readFilesCommand zcat "
+        "--sjdbGTFfile {input.gtf} "
+        "--outFileNamePrefix {DATADIR}/B_STAR_BAM/{params.sample_concat}_ "
+        "--outSAMorder Paired "
+        "--quantMode GeneCounts TranscriptomeSAM "
+        "--outSAMtype BAM SortedByCoordinate "
+        "--outReadsUnmapped Fastx "
+        "--outSAMattributes All "
+        "--twopassMode Basic "
+        "--readFilesIn {input.R1} {input.R2} > {output.log}"
+
+# Indexing Bam File
+rule index_bam:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam.bai"
+    shell:
+        "samtools index {input} {output}"
+
+# Distribution of Reads to Chromosomes
+rule chrome_idx:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_idx.tsv"
+    shell:
+        "samtools idxstats {input} > {output}"
+
+# Quality Control
+rule bam_stat:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/qc.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_bam_stat.txt"
+    shell:
+        "bam_stat.py -i {input} > {output}"
+
+# Inner Distance
+rule inner_distance:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam.bai",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12"
+    conda:
+        "envs/qc.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_inner_distance.e"
+    params:
+        sample_concat="{Sample}_{ip_or_input}"
+    shell:
+        "inner_distance.py -i {input.bam} "
+        "-o {DATADIR}/C_BAM_QC/{params.sample_concat} "
+        "-r {input.bed} &> {output}"
+
+# Infer Experiment
+rule infer_experiment:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+    conda:
+        "envs/qc.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_infer_experiment.o"
+    shell:
+        "infer_experiment.py -i {input.bam} "
+        "-r {input.bed} > {output}"
+
+rule read_distribution:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_readDistribution.txt"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "read_distribution.py "
+        "-r {input.bed} "
+        "-i {input.bam} > {output}"
+
+rule read_duplication:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}.DupRate_plot.pdf"
+    conda:
+        "envs/qc.yaml"
+    params:
+        sample_concat="{Sample}_{ip_or_input}"
+    shell:
+        "read_duplication.py "
+        "-i {input} "
+        "-o {DATADIR}/C_BAM_QC/{params.sample_concat}"
+
+rule flagstat:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.toTranscriptome.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_flagstat.tsv"
+    shell:
+        "samtools flagstat "
+        "-O tsv "
+        "{input.bam} > "
+        "{output}"
+
+rule mark_duplicates:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    output:
+        metrics="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.metrics",
+        bam=temp("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.bam"),
+        bai=temp("{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.bai"),
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "picard MarkDuplicates "
+        "I={input} "
+        "O={output.bam} "
+        "CREATE_INDEX=true "
+        "MAX_FILE_HANDLES=1000 "
+        "SORTING_COLLECTION_SIZE_RATIO=0.1 "
+        "VALIDATION_STRINGENCY=SILENT "
+        "REMOVE_DUPLICATES=false "
+        "M={output.metrics}"
+        # bam="{DATADIR}/PicardMarkDup_BAMs/{sample}.bam",
+
+rule dupradar:
+    input:
+        bam="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.bam",
+        bai="{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.bai",
+    params:
+        sample_concat="{Sample}_{ip_or_input}"
+    output:
+        "{DATADIR}/D_PicardMarkDup_BAMs/{Sample}_{ip_or_input}.dupRadar.rsav"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/150_dupRadar.R "
+        "{params.sample_concat} "
+
+
+rule encode_qc_sort:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample}_{ip_or_input}.sorted.bam")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "samtools sort -n {input.bam} "
+        "-o {output}"
+
+rule encode_metrics:
+    input:
+        "{DATADIR}/tmpdir/{Sample}_{ip_or_input}.sorted.bam"
+    output:
+        "{DATADIR}/D_ENCODE_METRICS/{Sample}_{ip_or_input}.encode.metrics"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        """bedtools bamtobed -bedpe -i {input} | awk 'BEGIN{{OFS="\\t"}}{{print $1,$2,$4,$6,$9,$10}}' | grep -v 'chrM' | grep -v 'chrEK12' """
+        """| sort | uniq -c | awk 'BEGIN{{OFS="\\t";mt=0;m0=0;m1=0;m2=0}} ($1==1){{m1=m1+1}} ($1==2){{m2=m2+1}} {{m0=m0+1}} {{mt=mt+$1}} END{{print mt,m0,m1,m2,m0/mt,m1/m0,m1/m2}}' > {output}"""
+
+rule rsem:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.toTranscriptome.out.bam",
+        chrlist="{DATADIR}/RSEM_Reference/hg38.chrlist",
+        grp="{DATADIR}/RSEM_Reference/hg38.grp",
+        idx="{DATADIR}/RSEM_Reference/hg38.idx.fa",
+        n2gidx="{DATADIR}/RSEM_Reference/hg38.n2g.idx.fa",
+        seq="{DATADIR}/RSEM_Reference/hg38.seq",
+        ti="{DATADIR}/RSEM_Reference/hg38.ti",
+        transcripts="{DATADIR}/RSEM_Reference/hg38.transcripts.fa"
+    conda:
+        "envs/count_reads.yaml"
+    params:
+        reference_genome="{DATADIR}/RSEM_Reference/hg38",
+        sample_concat="{Sample}_{ip_or_input}"
+    output:
+        "{DATADIR}/E_RSEM_output/{Sample}_{ip_or_input}.isoforms.results",
+        "{DATADIR}/E_RSEM_output/{Sample}_{ip_or_input}.genes.results",
+    shell:
+        "rsem-calculate-expression "
+        "--bam "
+        "--no-bam-output "
+        "--paired-end "
+        "--strandedness reverse "
+        "--num-threads 16 "
+        "{input.bam} "
+        "{params.reference_genome} "
+        "{DATADIR}/E_RSEM_output/{params.sample_concat} "
+
+rule forward_bw:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam.bai"
+    output:
+        bigWig="{DATADIR}/BigWigs/{Sample}_{ip_or_input}.forward.bigWig"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bamCoverage "
+        "--filterRNAstrand forward "
+        "--normalizeUsing RPKM "
+        "-p 5 "
+        "-b {input.bam} "
+        "-o {output.bigWig}"
+
+rule reverse_bw:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam.bai"
+    output:
+        bigWig="{DATADIR}/BigWigs/{Sample}_{ip_or_input}.reverse.bigWig"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bamCoverage "
+        "--filterRNAstrand reverse "
+        "--normalizeUsing RPKM "
+        "-p 5 "
+        "-b {input.bam} "
+        "-o {output.bigWig}"
+
+# Extract EK12 Reads from BAM File
+rule extract_EK12:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{Sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam.bai"
+    output:
+        temp("{DATADIR}/tmpdir/{Sample}_{ip_or_input}_EK12.bam")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "samtools view -b {input} chrEK12 > {output}"
+
+rule calculate_EK12_reads:
+    input:
+        "{DATADIR}/tmpdir/{Sample}_{ip_or_input}_EK12.bam"
+    output:
+        "{DATADIR}/C_BAM_QC/{Sample}_{ip_or_input}_EK12_bam_stat.txt"
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bam_stat.py -i {input} > {output}"
+
+rule make_one_bigwig:
+    input:
+        expand("{DATADIR}/BigWigs/{Sample}_{bigwig_method}.bigWig", DATADIR=DATADIR, bigwig_method=bigwig_method, Sample=samples)
+    output:
+        "{DATADIR}/BigWigs/All.{bigwig_method}.bigWig"
+    params:
+        short_input=' '.join(expand("{DATADIR}/BigWigs/{Sample}_{{bigwig_method}}.bigWig", DATADIR=DATADIR, Sample=samples))
+    shell:
+        "module load deeptools/3.2.1; "
+        "multiBigwigSummary bins "
+        "-b {params.short_input} "
+        "-bs 10000 "
+        "-p 10 "
+        "-o {output} "
+
+rule extract_R1_reads:
+    input:
+        "{DATADIR}/B_STAR_BAM/{sample}_{ip_or_input}_Aligned.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/tmpdir/{sample}_{ip_or_input}_R1.bam")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "samtools "
+        "view -hbf 64 "
+        "{input} > {output}"
+
+# MeTPeak
+rule metpeak:
+    input:
+        ip_bam="{DATADIR}/tmpdir/{sample}_IP_R1.bam",
+        input_bam="{DATADIR}/tmpdir/{sample}_Input_R1.bam",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    params:
+        sample="{sample}"
+    output:
+        "{DATADIR}/MeTPeak_Peaks/{sample}/peak.bed",
+        "{DATADIR}/MeTPeak_Peaks/{sample}/peak.xls"
+    shell:
+        "Rscript --vanilla Rscripts/MeTPeak.R "
+        "{params.sample} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/MeTPeak_Peaks/ "
+
+# ExomePeak
+rule exomepeak:
+    input:
+        ip_bam="{DATADIR}/tmpdir/{sample}_IP_R1.bam",
+        input_bam="{DATADIR}/tmpdir/{sample}_Input_R1.bam",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    params:
+        sample="{sample}"
+    output:
+        "{DATADIR}/exomePeak_Peaks/{sample}/peak.bed",
+        "{DATADIR}/exomePeak_Peaks/{sample}/peak.xls"
+    shell:
+        "Rscript --vanilla Rscripts/exomePeak.R "
+        "{params.sample} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/exomePeak_Peaks/ "
+
+# MeTPeak HOMER
+rule MeTPeak_fasta_from_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/MeTPeak_Peaks/{sample}/peak.bed"
+    output:
+        temp("{DATADIR}/tmpdir/{sample}_MetPeak_Peaks.fa")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule MeTPeak_shuffle_bed:
+    input:
+        bed="{DATADIR}/MeTPeak_Peaks/{sample}/peak.bed",
+        genomebed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+        chromsize="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrNameLength.txt",
+    output:
+        bed="{DATADIR}/MeTPeak_Peaks/{sample}/peak_shuffle.bed",
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "shuffleBed -incl {input.genomebed} "
+        "-seed 12345 "
+        "-noOverlapping "
+        "-i {input.bed} "
+        "-g {input.chromsize} "
+        "> {output.bed} "
+
+rule MeTPeak_fasta_from_shuffle_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/MeTPeak_Peaks/{sample}/peak_shuffle.bed",
+    output:
+        temp("{DATADIR}/tmpdir/{sample}_MetPeak_Peaks_shuffle.fa")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule MeTPeak_HOMER:
+    input:
+        peak_fasta="{DATADIR}/tmpdir/{sample}_MetPeak_Peaks.fa",
+        random_fasta="{DATADIR}/tmpdir/{sample}_MetPeak_Peaks_shuffle.fa"
+    params:
+        outdir="{DATADIR}/I_HOMER_MetPeak/{sample}"
+    output:
+        "{DATADIR}/I_HOMER_MetPeak/{sample}/homerResults.html"
+    conda:
+        "envs/motifs.yaml"
+    shell:
+        "findMotifs.pl "
+        "{input.peak_fasta} "
+        "fasta {params.outdir} "
+        "-fasta {input.random_fasta} "
+        "-p 8 "
+        "-len 5,6,7,8 "
+        "-S 8 "
+        "-rna "
+
+rule exomePeak_fasta_from_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/exomePeak_Peaks/{sample}/peak.bed"
+    output:
+        temp("{DATADIR}/tmpdir/{sample}_exomePeak_Peaks.fa")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule exomePeak_shuffle_bed:
+    input:
+        bed="{DATADIR}/exomePeak_Peaks/{sample}/peak.bed",
+        genomebed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+        chromsize="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrNameLength.txt",
+    output:
+        bed="{DATADIR}/exomePeak_Peaks/{sample}/peak_shuffle.bed",
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "shuffleBed -incl {input.genomebed} "
+        "-seed 12345 "
+        "-noOverlapping "
+        "-i {input.bed} "
+        "-g {input.chromsize} "
+        "> {output.bed} "
+
+rule exomePeak_fasta_from_shuffle_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/exomePeak_Peaks/{sample}/peak_shuffle.bed",
+    output:
+        temp("{DATADIR}/tmpdir/{sample}_exomePeak_Peaks_shuffle.fa")
+    conda:
+        "envs/qc.yaml"
+    shell:
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule exomePeak_HOMER:
+    input:
+        peak_fasta="{DATADIR}/tmpdir/{sample}_exomePeak_Peaks.fa",
+        random_fasta="{DATADIR}/tmpdir/{sample}_exomePeak_Peaks_shuffle.fa"
+    params:
+        outdir="{DATADIR}/I_HOMER_exomePeak/{sample}"
+    output:
+        "{DATADIR}/I_HOMER_exomePeak/{sample}/homerResults.html"
+    conda:
+        "envs/motifs.yaml"
+    shell:
+        "findMotifs.pl "
+        "{input.peak_fasta} "
+        "fasta {params.outdir} "
+        "-fasta {input.random_fasta} "
+        "-p 8 "
+        "-len 5,6,7,8 "
+        "-S 8 "
+        "-rna "
+
+rule GuitarPlot:
+    input:
+        peaks="{DATADIR}/{method}_Peaks/{sample}/peak.bed",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf",
+    params:
+        method="{method}",
+        sample="{sample}",
+    output:
+        "{DATADIR}/R_GuitarPlot/{method}_{sample}.rsav"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/guitarplot.R "
+        "{params.method} "
+        "{params.sample} "
+        "{input.gtf} "
+
+rule count_reads_xenograft:
+    input:
+        saf="{DATADIR}/H_PeakCounts/Xenograft.peaks.saf",
+        bams=expand("{BAMDIR}/B_STAR_BAM/{sample}_IP_Aligned.sortedByCoord.out.bam", BAMDIR=BAMDIR, sample=xenograft_samples)
+    output:
+        "{DATADIR}/H_PeakCounts/Xenograft.counts"
+    params:
+        input_string=' '.join(expand("{BAMDIR}/B_STAR_BAM/{sample}_IP_Aligned.sortedByCoord.out.bam", BAMDIR=BAMDIR, sample=xenograft_samples))
+    shell:
+        "module load subread/2.0.1 ; "
+        "featureCounts "
+        "-O "
+        "-C "
+        "-p  "
+        "-f "
+        "-s 2 "
+        "-T 16 "
+        "-F SAF "
+        "--largestOverlap "
+        "-a {input.saf} "
+        "-o {output} "
+        "{params.input_string} "
+
+rule count_reads_tumournormal:
+    input:
+        saf="{DATADIR}/H_PeakCounts/TumourNormal.peaks.saf",
+        bams=expand("{BAMDIR}/B_STAR_BAM/{sample}_IP_Aligned.sortedByCoord.out.bam", BAMDIR=BAMDIR, sample=tumour_normal_samples)
+    output:
+        "{DATADIR}/H_PeakCounts/TumourNormal.counts"
+    params:
+        input_string=' '.join(expand("{BAMDIR}/B_STAR_BAM/{sample}_IP_Aligned.sortedByCoord.out.bam", BAMDIR=BAMDIR, sample=tumour_normal_samples))
+    shell:
+        "module load subread/2.0.1 ; "
+        "featureCounts "
+        "-O "
+        "-C "
+        "-p  "
+        "-f "
+        "-s 2 "
+        "-T 16 "
+        "-F SAF "
+        "--largestOverlap "
+        "-a {input.saf} "
+        "-o {output} "
+        "{params.input_string} "

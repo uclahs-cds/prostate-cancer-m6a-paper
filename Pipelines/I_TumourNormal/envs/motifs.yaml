@@ -1,0 +1,9 @@
+name: motifs
+channels:
+  - conda-forge
+  - bioconda
+  - mvdbeek
+dependencies:
+  - meme=5.1.0
+  - macs2=2.2.6
+  - homer=4.11
