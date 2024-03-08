@@ -1,0 +1,186 @@
+from cmath import exp
+import pandas as pd
+
+# Experiment ID, i.e. the pulldown or the RNA-seq library {sample_id}_IP or {sample_id}_Input
+experiment=['IP', 'Input']
+
+# Change this
+DATADIR=""
+
+# Sample_id (e.g. CPCG0100)
+sample_id=pd.read_table("sample_file.tsv", header=None)[0].tolist()
+
+
+# Tracking outputs
+rule all:
+    input:
+        expand("{DATADIR}/A_IndividualVCFs/{sample_id}.vcf.gz", DATADIR=DATADIR, sample_id=sample_id),
+        expand("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Aligned.sortedByCoord.out.bam", DATADIR=DATADIR, sample_id=sample_id, experiment="IP"),
+        expand("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Aligned_filtered.sortedByCoord.out.bam", DATADIR=DATADIR, sample_id=sample_id, experiment="IP"),
+        expand("{DATADIR}/C_Output_Table/{sample_id}_{experiment}_ASER_filtered.txt", DATADIR=DATADIR, sample_id=sample_id, experiment=experiment),
+
+###################
+#   Pipeline 1    #
+###################
+# Sample based allelic expression calling using WASP filtering in STAR
+# Step 0.1 - trim adaptors
+# Step 0.2 - prepare sample-specific VCF files
+# Step 0.3 - test m6A specific peaks, filter VCF files
+# Step 1 - map using STAR - personal VCF and WASP
+# Step 2 - filter bams using flags
+# Step 3 - GATK Allelic Expression ASEReadCounter
+
+# Make sure you have the following files
+# 1. STAR reference genome
+# 2. VCF file
+# 3. Sample fastqs
+
+rule trim_adaptors:
+    input:
+        R1="{DATADIR}/FASTQs/{sample_id}_{experiment}_R1.fastq.gz",
+        R2="{DATADIR}/FASTQs/{sample_id}_{experiment}_R2.fastq.gz"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        R1=temp("{DATADIR}/A_Trimmed_FASTQs/{sample_id}_{experiment}_R1.fastq.gz"),
+        R2=temp("{DATADIR}/A_Trimmed_FASTQs/{sample_id}_{experiment}_R2.fastq.gz"),
+        log="{DATADIR}/A_Trimmed_FASTQs/{sample_id}_{experiment}.log"
+    params:
+        min_len="50",
+        adapter_f="AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+        adapter_r="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+    shell:
+        "cutadapt "
+        "-a {params.adapter_f} "
+        "-A {params.adapter_r} "
+        "-m {params.min_len} "
+        "--report=minimal "
+        "-o {output.R1} "
+        "-p {output.R2} {input.R1} {input.R2} > {output.log}"
+
+rule prepare_sample_vcf_compressed:
+    input:
+        "{DATADIR}/A_IndividualVCFs/{sample_id}.vcf"
+    params:
+        sample_id="{sample_id}"
+    conda:
+        "envs/utils.yaml"
+    output:
+        "{DATADIR}/A_IndividualVCFs/{sample_id}.vcf.gz"
+    shell:
+        "bgzip "
+        "-c {input} "
+        "> "
+        "{output} "
+
+rule prepare_sample_vcf:
+    input:
+        "{DATADIR}/Input_Data/CPCGENE_genotype_133.vcf.gz"
+    params:
+        sample_id="{sample_id}"
+    conda:
+        "envs/utils.yaml"
+    output:
+        "{DATADIR}/A_IndividualVCFs/{sample_id}.vcf"
+    shell:
+        "bcftools view "
+        "-c1 "
+        "-Oz "
+        "-s {params.sample_id} "
+        "-o {output} "
+        "{input} "
+
+rule map_star:
+    input:
+        vcf="{DATADIR}/A_IndividualVCFs/{sample_id}.vcf",
+        genome="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/Genome",
+        R1="{DATADIR}/A_Trimmed_FASTQs/{sample_id}_{experiment}_R1.fastq.gz",
+        R2="{DATADIR}/A_Trimmed_FASTQs/{sample_id}_{experiment}_R2.fastq.gz",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        bam=temp("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Aligned.sortedByCoord.out.bam"),
+        final_log="{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Log.final.out",
+        log="{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}.o",
+        Chimjunction="{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Chimeric.out.junction",
+        STARgenome=temp(directory("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}__STARgenome")),
+        STARtmp=temp(directory("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}__STARtmp"))
+    params:
+        sample="{sample_id}_{experiment}",
+        index="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12"
+    shell:
+        "STAR "
+        "--runThreadN 10 "
+        "--genomeDir {params.index} "
+        "--chimSegmentMin 10 "
+        "--readFilesCommand zcat "
+        "--sjdbGTFfile {input.gtf} "
+        "--outFileNamePrefix {DATADIR}/B_STAR_BAM/{params.sample}_ "
+        "--outSAMorder Paired "
+        "--outSAMtype BAM SortedByCoordinate "
+        "--outSAMattributes All vA vG vW "
+        "--waspOutputMode SAMtag "
+        "--varVCFfile {input.vcf} "
+        "--readFilesIn {input.R1} {input.R2} > {output.log}"
+
+# Try the solution here:
+# https://www.biostars.org/p/148858/
+rule filter_bam:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Aligned.sortedByCoord.out.bam"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        temp("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Aligned_filtered.sortedByCoord.out.bam")
+    params:
+        samtag="vW:i:1"
+    shell:
+        "(samtools view -H {input.bam}; "
+        "samtools view {input.bam} | "
+        "grep -w '{params}') | "
+        "samtools view -bS - > {output} "
+
+rule add_read_groups:
+    input:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_Aligned_filtered.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_ReadGroups.out.bam")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "picard AddOrReplaceReadGroups "
+        "I={input} "
+        "O={output} "
+        "SO=coordinate RGID=id "
+        "RGLB=library RGPL=ILLUMINA RGPU=machine RGSM=sample"
+
+rule index_vcf:
+    input:
+        "{DATADIR}/A_IndividualVCFs/{sample_id}.vcf.gz",
+    output:
+        "{DATADIR}/A_IndividualVCFs/{sample_id}.vcf.gz.tbi",
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "gatk IndexFeatureFile "
+        "-I {input} "
+
+#         "--disable-read-filter HasReadGroupReadFilter "
+rule allelic_expression_filter:
+    input:
+        genome="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_{experiment}_ReadGroups.out.bam",
+        vcf="{DATADIR}/A_IndividualVCFs/{sample_id}.vcf.gz",
+        vcf_index="{DATADIR}/A_IndividualVCFs/{sample_id}.vcf.gz.tbi",
+    conda:
+        "envs/utils.yaml"
+    output:
+        table="{DATADIR}/C_Output_Table/{sample_id}_{experiment}_ASER_filtered.txt"
+    shell:
+        "gatk "
+        "ASEReadCounter "
+        "--reference {input.genome} "
+        "--input {input.bam} "
+        "--variant {input.vcf} "
+        "--output {output.table} "

@@ -1,0 +1,9 @@
+name: utils
+channels:
+  - conda-forge
+  - bioconda
+  - mvdbeek
+dependencies:
+  - bcftools=1.13
+  - picard=2.25.6
+  - gatk4=4.1.8.1

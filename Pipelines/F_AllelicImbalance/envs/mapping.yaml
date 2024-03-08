@@ -1,0 +1,9 @@
+name: mapping
+channels:
+  - conda-forge
+  - bioconda
+  - mvdbeek
+dependencies:
+  - STAR=2.7.2
+  - cutadapt=2.8
+  - samtools=1.13
