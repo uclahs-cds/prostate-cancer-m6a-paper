@@ -1,0 +1,70 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A-%j.o",
+        "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "subsample_ip_reads":
+    {
+        "t": "0-2:00:00",
+        "mem": "64G",
+        "c": "1",
+        "p": "veryhimem",
+        "o": "log/snakemake-m6A-subsample_ip_reads-%j.o",
+        "e": "log/snakemake-m6A-subsample_ip_reads-%j.e"
+    },
+    "extract_R1_reads_ip":
+    {
+        "o": "log/snakemake-m6A-extract_ip_R1_reads_ip-%j.o",
+        "e": "log/snakemake-m6A-extract_ip_R1_reads_ip-%j.e"
+    },
+    "extract_R1_reads_input":
+    {
+        "o": "log/snakemake-m6A-extract_ip_R1_reads_input-%j.o",
+        "e": "log/snakemake-m6A-extract_ip_R1_reads_input-%j.e"
+    },
+    "index_IP_bam":
+    {
+      "o": "log/snakemake-m6A-index_IP_bam-%j.o",
+      "e": "log/snakemake-m6A-index_IP_bam-%j.e"
+    },
+    "index_input_bam":
+    {
+      "o": "log/snakemake-m6A-index_input_bam-%j.o",
+      "e": "log/snakemake-m6A-index_input_bam-%j.e"
+    },
+    "metpeak_ip":
+    {
+        "o": "log/snakemake-m6A-metpeak_ip-%j.o",
+        "e": "log/snakemake-m6A-metpeak_ip-%j.e"
+    },
+    "Bed12toBed6_exomepeak_IP":
+    {
+      "o": "log/snakemake-m6A-Bed12toBed6_exomepeak_IP-%j.o",
+      "e": "log/snakemake-m6A-Bed12toBed6_exomepeak_IP-%j.e"
+    },
+    "Bed12toBed6_MeTPeak_IP":
+    {
+      "o": "log/snakemake-m6A-Bed12toBed6_MeTPeak_IP-%j.o",
+      "e": "log/snakemake-m6A-Bed12toBed6_MeTPeak_IP-%j.e"
+    },
+    "exomepeak_ip":
+    {
+        "o": "log/snakemake-m6A-exomepeak_ip-%j.o",
+        "e": "log/snakemake-m6A-exomepeak_ip-%j.e"
+    },
+    "macs_ip":
+    {
+        "t": "0-24:00:00",
+        "mem": "42G",
+        "c": "1",
+        "p": "himem",
+        "o": "log/snakemake-m6A-macs_ip-%j.o",
+        "e": "log/snakemake-m6A-macs_ip-%j.e"
+    },
+}

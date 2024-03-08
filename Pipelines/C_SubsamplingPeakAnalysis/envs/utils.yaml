@@ -1,0 +1,9 @@
+name: utils
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - samtools=1.10
+  - picard=2.21.7
+  - bedtools=2.27.1
+  - macs2=2.2.6

@@ -1,0 +1,214 @@
+import pandas as pd
+
+# Samples
+sample_id=["CPCG0464", "CPCG0562", "CPCG0382"]
+
+# Percent
+percent=[0.5, 0.25, 0.1, 0.01]
+
+# Seeds
+seed=['314159', '271828', '1618']
+
+# IP or Input
+ipinput=['IP', 'Input']
+
+# Working Directory
+DATADIR="/cluster/home/helenzhu/Cluster_Helen/Snakemake_M6A_hg38"
+
+# Loading Modules
+shell.prefix("module load R/3.6.1; ")
+
+# Latency wait
+shell.suffix("; sleep 5")
+
+rule all:
+    input:
+        # "utils.txt",
+        expand("{DATADIR}/subsample_temp/{Sample_id}_IP_{percent}_{seed}.bam", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
+        expand("{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
+        expand("{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
+        expand("{DATADIR}/O_PeaksSim/MACS2_Peaks/{Sample_id}_IP_{percent}_{seed}_peaks.narrowPeak", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
+        expand("{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed6", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
+        expand("{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed6", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
+
+rule mapping_env:
+    conda:
+        "envs/utils.yaml"
+    output:
+        "utils.txt"
+    shell:
+        "touch utils.txt"
+
+rule extract_R1_reads_input:
+    input:
+        "{DATADIR}/B_STAR_BAM/{Sample_id}_Input_Aligned.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "samtools "
+        "view -hbf 64 {input} > {output}"
+
+rule index_input_bam:
+    input:
+        "{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam"
+    conda:
+        "envs/utils.yaml"
+    output:
+        temp("{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam.bai")
+    shell:
+        "samtools index {input} {output}"
+
+rule subsample_ip_reads:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{Sample_id}_IP_Aligned.sortedByCoord.out.bam"
+    output:
+        bam="{DATADIR}/subsample_temp/{Sample_id}_IP_{percent}_{seed}.bam"
+    params:
+        DATADIR="{DATADIR}",
+        Sample_id="{Sample_id}",
+        percent="{percent}",
+        seed="{seed}",
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "picard -Xms256M -Xmx50G DownsampleSam "
+        "I={input.bam} "
+        "O={output.bam} "
+        "MAX_RECORDS_IN_RAM=1000 "
+        "STRATEGY=Chained "
+        "R={params.seed} "
+        "P={params.percent} "
+        "ACCURACY=0.0001 "
+        "TMP_DIR={params.DATADIR}/subsample_temp/{params.Sample_id}_IP_{params.percent}_{params.seed}/ "
+
+rule extract_R1_reads_ip:
+    input:
+        "{DATADIR}/subsample_temp/{Sample_id}_IP_{percent}_{seed}.bam"
+    output:
+        temp("{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam")
+    conda:
+        "envs/utils.yaml"
+    shell:
+        "samtools "
+        "view -hbf 64 {input} > {output}"
+
+rule index_IP_bam:
+    input:
+        "{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam"
+    conda:
+        "envs/utils.yaml"
+    output:
+        temp("{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam.bai")
+    shell:
+        "samtools index {input} {output}"
+
+# MeTPeak
+rule metpeak_ip:
+    input:
+        ip_bam="{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam",
+        input_bam="{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam",
+        ip_bai="{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam.bai",
+        input_bai="{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam.bai",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    output:
+        "{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed",
+        "{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.xls"
+    params:
+        Sample_id="{Sample_id}",
+        percent="{percent}",
+        seed="{seed}"
+    shell:
+        "Rscript --vanilla Rscripts/MeTPeak.R "
+        "{params.Sample_id}_IP_{params.percent}_{params.seed} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/O_PeaksSim/MeTPeak_Peaks/ "
+
+rule Bed12toBed6_MeTPeak_IP:
+    input:
+        "{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed"
+    conda:
+        "envs/utils.yaml"
+    params:
+        Sample_id="{Sample_id}",
+        percent="{percent}",
+        seed="{seed}"
+    output:
+        "{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed6"
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
+
+# ExomePeak
+rule exomepeak_ip:
+    input:
+        ip_bam="{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam",
+        input_bam="{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam",
+        ip_bai="{DATADIR}/tmpdir2/{Sample_id}_IP_{percent}_{seed}_R1.bam.bai",
+        input_bai="{DATADIR}/tmpdir2/{Sample_id}_Input_R1.bam.bai",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    output:
+        "{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed",
+        "{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.xls"
+    params:
+        Sample_id="{Sample_id}",
+        percent="{percent}",
+        seed="{seed}"
+    shell:
+        "Rscript --vanilla Rscripts/exomePeak.R "
+        "{params.Sample_id}_IP_{params.percent}_{params.seed} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/O_PeaksSim/exomePeak_Peaks/ "
+
+
+rule Bed12toBed6_exomepeak_IP:
+    input:
+        "{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed",
+    conda:
+        "envs/utils.yaml"
+    params:
+        Sample_id="{Sample_id}",
+        percent="{percent}",
+        seed="{seed}"
+    output:
+        "{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed6",
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
+
+# MACS2
+rule macs_ip:
+    input:
+        ip_bam="{DATADIR}/subsample_temp/{Sample_id}_IP_{percent}_{seed}.bam",
+        input_bam="{DATADIR}/B_STAR_BAM/{Sample_id}_Input_Aligned.sortedByCoord.out.bam",
+    conda:
+        "envs/utils.yaml"
+    params:
+        Sample_id="{Sample_id}",
+        percent="{percent}",
+        seed="{seed}",
+        outdir="{DATADIR}/O_PeaksSim/MACS2_Peaks/",
+    output:
+        narrowpeak="{DATADIR}/O_PeaksSim/MACS2_Peaks/{Sample_id}_IP_{percent}_{seed}_peaks.narrowPeak",
+        peaks="{DATADIR}/O_PeaksSim/MACS2_Peaks/{Sample_id}_IP_{percent}_{seed}_peaks.xls",
+        summits="{DATADIR}/O_PeaksSim/MACS2_Peaks/{Sample_id}_IP_{percent}_{seed}_summits.bed",
+    shell:
+        "macs2 callpeak "
+        "-t {input.ip_bam} "
+        "-c {input.input_bam} "
+        "--name={params.Sample_id}_IP_{params.percent}_{params.seed} "
+        "--outdir={params.outdir} "
+        "-f 'BAMPE' "
+        "-q 0.05 "
+        "--gsize=2913022398 "
+        "--call-summits "
+        "--keep-dup all "
+        "--slocal 10000 "
+        "--llocal 10000 "
