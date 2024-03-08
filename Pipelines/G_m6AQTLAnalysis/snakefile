@@ -1,0 +1,356 @@
+import pandas as pd
+
+# DATADIR
+DATADIR=""
+
+# PeakCaller
+PeakCaller='MeTPeak'
+
+# PEER Components
+n_components = range(0, 11)
+
+# Tags for different versions of the software
+tag='V9_MetricVoting_OptimizationFunction_MaxGapOnly'
+
+# Testing different versions of ld pruning
+output_tag_list = ['CPCGENE_filtered.final', 'CPCGENE_RiskSNPs.final']
+
+wildcard_constraints:
+    output_tag = '|'.join(output_tag_list),
+
+# Load R
+shell.prefix("module load R/4.0.0 ; ")
+
+rule all:
+    input:
+        # Plink
+        "{DATADIR}/Plink/CPCGENE_genotype_132.hwe".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_genotype_132.imiss".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_genotype_132.lmiss".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_genotype_132.frq".format(DATADIR=DATADIR),
+        # Risk SNP extraction
+        "{DATADIR}/Input/CPCGENE_RiskSNPs.vcf.gz".format(DATADIR=DATADIR),
+        "{DATADIR}/Input/CPCGENE_RiskSNPs.final.vcf.gz".format(DATADIR=DATADIR),
+        # Filtering QC
+        "{DATADIR}/Input/Filter.Variants.tsv".format(DATADIR=DATADIR),
+        "{DATADIR}/Input/CPCGENE_filtered.vcf.gz".format(DATADIR=DATADIR),
+        "{DATADIR}/Input/CPCGENE_filtered.final.vcf.gz".format(DATADIR=DATADIR),
+        # Expression
+        "{DATADIR}/Input/{PeakCaller}.{tag}.Expression.tsv".format(DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        "{DATADIR}/Input/{PeakCaller}.{tag}.Peak.Location.tsv".format(DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Plink PCA
+        "{DATADIR}/Plink/CPCGENE_filtered.eigenval".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_filtered.eigenvec".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_filtered.unpruned.eigenval".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_filtered.unpruned.eigenvec".format(DATADIR=DATADIR),
+        "{DATADIR}/Plink/CPCGENE_filtered.covariates".format(DATADIR=DATADIR),
+        # PEER
+        expand("{DATADIR}/covariates/{PeakCaller}.{tag}_{n_components}_peer.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag, n_components=n_components),
+        # Pruning
+        expand("{DATADIR}/Input/{output_tag}.matrix.tsv", DATADIR=DATADIR, output_tag=output_tag_list),
+        expand("{DATADIR}/Input/{output_tag}.location.tsv", DATADIR=DATADIR, output_tag=output_tag_list),
+        # Results
+        expand("{DATADIR}/results/{PeakCaller}.{tag}.{output_tag}.{n_components}.MatrixQTL.cis.all.tsv",  DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag, output_tag=output_tag_list, n_components=n_components),
+
+#############################
+#       plinkQC             #
+#############################
+
+# Doing Quality Control
+rule hardy_weinberg:
+    input:
+        "{DATADIR}/Input/CPCGENE_genotype_132.fixedheader.vcf.gz"
+    output:
+        "{DATADIR}/Plink/CPCGENE_genotype_132.hwe"
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_genotype_132"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "vcftools "
+        "--gzvcf {input} "
+        "--hardy "
+        "--out {params.tag} "
+
+rule allele_frequency:
+    input:
+        "{DATADIR}/Input/CPCGENE_genotype_132.fixedheader.vcf.gz"
+    output:
+        "{DATADIR}/Plink/CPCGENE_genotype_132.frq"
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_genotype_132"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "vcftools "
+        "--gzvcf {input} "
+        "--freq2 "
+        "--out {params.tag} "
+
+rule missingness_individual:
+    input:
+        "{DATADIR}/Input/CPCGENE_genotype_132.fixedheader.vcf.gz"
+    output:
+        "{DATADIR}/Plink/CPCGENE_genotype_132.imiss"
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_genotype_132"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "vcftools "
+        "--gzvcf {input} "
+        "--missing-indv "
+        "--out {params.tag} "
+
+rule missingness_site:
+    input:
+        "{DATADIR}/Input/CPCGENE_genotype_132.fixedheader.vcf.gz"
+    output:
+        "{DATADIR}/Plink/CPCGENE_genotype_132.lmiss"
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_genotype_132"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "vcftools "
+        "--gzvcf {input} "
+        "--missing-site "
+        "--out {params.tag} "
+
+#############################
+#       Extract Subsets     #
+#############################
+
+rule generate_snp_filter:
+    input:
+        frq="{DATADIR}/Plink/CPCGENE_genotype_132.frq",
+        hwe="{DATADIR}/Plink/CPCGENE_genotype_132.hwe",
+        site_missing="{DATADIR}/Plink/CPCGENE_genotype_132.imiss",
+    params:
+        isamples="132"
+    output:
+        "{DATADIR}/Input/Filter.Variants.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/010_QC.R "
+        "{params.isamples} "
+
+rule filter_qc_snps:
+    input:
+        vcf="{DATADIR}/Input/CPCGENE_genotype_132.fixedheader.vcf.gz",
+        index="{DATADIR}/Input/CPCGENE_genotype_132.fixedheader.vcf.gz.tbi",
+        exclude="{DATADIR}/Input/Filter.Variants.tsv"
+    output:
+        vcf="{DATADIR}/Input/CPCGENE_filtered.vcf.gz",
+        index="{DATADIR}/Input/CPCGENE_filtered.vcf.gz.tbi"
+    conda:
+        "envs/bcftools.yaml"
+    shell:
+        "bcftools view "
+        "-T ^{input.exclude} "
+        "{input.vcf} "
+        "-O z "
+        "-o {output.vcf} ; "
+        "module load tabix/0.2.6 ; "
+        "tabix -p vcf {output.vcf} "
+
+rule extract_risk_snps:
+    input:
+        snp_ids="{DATADIR}/Input/risk.snp.ids.tsv",
+        vcf="{DATADIR}/Input/CPCGENE_filtered.vcf.gz",
+        index="{DATADIR}/Input/CPCGENE_filtered.vcf.gz.tbi"
+    output:
+        vcf="{DATADIR}/Input/CPCGENE_RiskSNPs.vcf.gz",
+        index="{DATADIR}/Input/CPCGENE_RiskSNPs.vcf.gz.tbi",
+    conda:
+        "envs/bcftools.yaml"
+    shell:
+        "bcftools filter "
+        "-i 'ID=@{input.snp_ids}' "
+        "{input.vcf} "
+        "-O z "
+        "-o {output.vcf} ; "
+        "module load tabix/0.2.6 ; "
+        "tabix -p vcf {output.vcf} "
+
+rule reassign_ids_to_final:
+    input:
+        vcf="{DATADIR}/Input/CPCGENE_{reassign_tag}.vcf.gz",
+        index="{DATADIR}/Input/CPCGENE_{reassign_tag}.vcf.gz.tbi"
+    output:
+        vcf="{DATADIR}/Input/CPCGENE_{reassign_tag}.final.vcf.gz",
+        index="{DATADIR}/Input/CPCGENE_{reassign_tag}.final.vcf.gz.tbi"
+    conda:
+        "envs/bcftools.yaml"
+    shell:
+        "bcftools annotate "
+        "--set-id '%ID:%CHROM:%POS:%REF:%ALT' "
+        "{input.vcf} "
+        "-O z "
+        "-o {output.vcf} ; "
+        "module load tabix/0.2.6 ; "
+        "tabix -p vcf {output.vcf} "
+
+#############################
+#    Expression Matrix      #
+#############################
+rule generate_input_expression:
+    input:
+        peaks="{DATADIR}/Matrices/{PeakCaller}.{tag}.peaks.tsv",
+        counts="{DATADIR}/Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Adjusted.tsv"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag = "{tag}"
+    output:
+        "{DATADIR}/Input/{PeakCaller}.{tag}.Expression.tsv",
+        "{DATADIR}/Input/{PeakCaller}.{tag}.Peak.Location.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/150_MatrixQTL.Expression.Files.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+#############################
+#    Computing Covariates   #
+#############################
+
+# Default parameters in Plink for ld pruning
+rule plink_ldprune:
+    input:
+        "{DATADIR}/Input/CPCGENE_filtered.final.vcf.gz"
+    output:
+        "{DATADIR}/Plink/CPCGENE_filtered.prune.in",
+        "{DATADIR}/Plink/CPCGENE_filtered.prune.out"
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_filtered"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "plink "
+        "--vcf {input} "
+        "--double-id "
+        "--indep-pairwise 50 5 0.5 "
+        "--out {params.tag} "
+
+# Doing PCA in Plink
+# NOTE: Should try this with L/D pruning
+# https://speciationgenomics.github.io/pca/
+rule plink_pca_ld_trimmed:
+    input:
+        vcf="{DATADIR}/Input/CPCGENE_filtered.final.vcf.gz",
+        ld_prune="{DATADIR}/Plink/CPCGENE_filtered.prune.in",
+    output:
+        "{DATADIR}/Plink/CPCGENE_filtered.eigenval",
+        "{DATADIR}/Plink/CPCGENE_filtered.eigenvec",
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_filtered"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "plink "
+        "--vcf {input.vcf}  "
+        "--double-id "
+        "--extract {input.ld_prune} "
+        "--pca 7 "
+        "--out {params.tag} "
+
+rule format_covariates:
+    input:
+        eigenvec="{DATADIR}/Plink/CPCGENE_filtered.eigenvec",
+    output:
+        "{DATADIR}/Plink/CPCGENE_filtered.covariates",
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/180_GeneratePlinkCovariates.R "
+        "{input.eigenvec} "
+        "{output} "
+
+# https://github.com/hall-lab/gtex/blob/master/peer.R
+rule peer:
+    input:
+        expr_mat="{DATADIR}/Input/{PeakCaller}.{tag}.Expression.tsv",
+        plink_cov="{DATADIR}/Plink/CPCGENE_filtered.covariates",
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}",
+        n_components="{n_components}",
+    output:
+        "{DATADIR}/covariates/{PeakCaller}.{tag}_{n_components}_peer.tsv"
+    shell:
+        "/cluster/home/helenzhu/.conda/envs/peer/bin/Rscript --vanilla "
+        "Rscripts/170_Covariate.Peer.Files.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+        "{params.n_components} "
+
+rule plink_pca:
+    input:
+        "{DATADIR}/Input/CPCGENE_filtered.final.vcf.gz"
+    output:
+        "{DATADIR}/Plink/CPCGENE_filtered.unpruned.eigenval",
+        "{DATADIR}/Plink/CPCGENE_filtered.unpruned.eigenvec",
+    params:
+        tag="{DATADIR}/Plink/CPCGENE_filtered.unpruned"
+    shell:
+        "module load plink/1.90 vcftools/0.1.15 ; "
+        "plink "
+        "--vcf {input}  "
+        "--double-id "
+        "--pca 7 "
+        "--out {params.tag} "
+
+#############################
+#       MatrixQTL           #
+#############################
+
+rule generate_input_snps:
+    input:
+        "{DATADIR}/Input/{output_tag}.vcf.gz"
+    params:
+        output_tag="{output_tag}"
+    output:
+        "{DATADIR}/Input/{output_tag}.matrix.tsv",
+        "{DATADIR}/Input/{output_tag}.location.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/190_MatrixQTL.Input.Files.R "
+        "{input} "
+        "{params.output_tag} "
+
+rule run_matrixqtl_sig:
+    input:
+        snp_matrix="{DATADIR}/Input/{output_tag}.matrix.tsv",
+        snp_loc="{DATADIR}/Input/{output_tag}.location.tsv",
+        peak_mat="{DATADIR}/Input/{PeakCaller}.{tag}.Expression.tsv",
+        peak_loc="{DATADIR}/Input/{PeakCaller}.{tag}.Peak.Location.tsv",
+        cov_mat="{DATADIR}/covariates/{PeakCaller}.{tag}_{n_components}_peer.tsv",
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}",
+        output_tag="{output_tag}",
+        n_components="{n_components}",
+    output:
+        "{DATADIR}/results/{PeakCaller}.{tag}.{output_tag}.{n_components}.MatrixQTL.cis.sig.tsv",
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/200_MatrixQTL.sig.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+        "{params.output_tag} "
+        "{params.n_components} "
+
+rule run_matrixqtl_cis:
+    input:
+        snp_matrix="{DATADIR}/Input/{output_tag}.matrix.tsv",
+        snp_loc="{DATADIR}/Input/{output_tag}.location.tsv",
+        peak_mat="{DATADIR}/Input/{PeakCaller}.{tag}.Expression.tsv",
+        peak_loc="{DATADIR}/Input/{PeakCaller}.{tag}.Peak.Location.tsv",
+        cov_mat="{DATADIR}/covariates/{PeakCaller}.{tag}_{n_components}_peer.tsv",
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}",
+        output_tag="{output_tag}",
+        n_components="{n_components}",
+    output:
+        "{DATADIR}/results/{PeakCaller}.{tag}.{output_tag}.{n_components}.MatrixQTL.cis.all.tsv",
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/201_MatrixQTL.cis.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+        "{params.output_tag} "
+        "{params.n_components} "
