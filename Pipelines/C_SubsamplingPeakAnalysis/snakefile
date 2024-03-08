@@ -13,31 +13,19 @@ seed=['314159', '271828', '1618']
 ipinput=['IP', 'Input']
 
 # Working Directory
-DATADIR="/cluster/home/helenzhu/Cluster_Helen/Snakemake_M6A_hg38"
+DATADIR=""
 
 # Loading Modules
 shell.prefix("module load R/3.6.1; ")
 
-# Latency wait
-shell.suffix("; sleep 5")
-
 rule all:
     input:
-        # "utils.txt",
         expand("{DATADIR}/subsample_temp/{Sample_id}_IP_{percent}_{seed}.bam", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
         expand("{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
         expand("{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
         expand("{DATADIR}/O_PeaksSim/MACS2_Peaks/{Sample_id}_IP_{percent}_{seed}_peaks.narrowPeak", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
         expand("{DATADIR}/O_PeaksSim/exomePeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed6", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
         expand("{DATADIR}/O_PeaksSim/MeTPeak_Peaks/{Sample_id}_IP_{percent}_{seed}/peak.bed6", DATADIR=DATADIR, Sample_id=sample_id, percent=percent, seed=seed),
-
-rule mapping_env:
-    conda:
-        "envs/utils.yaml"
-    output:
-        "utils.txt"
-    shell:
-        "touch utils.txt"
 
 rule extract_R1_reads_input:
     input:
