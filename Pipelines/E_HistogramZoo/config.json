@@ -1,0 +1,56 @@
+{
+    "__default__":
+    {
+      "mem": "16G",
+      "t": "5-00:00:00",
+      "c": "1",
+      "p": "all",
+      "o": "log/snakemake-m6A-%j.o",
+      "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "consensus_peaks_eps":
+    {
+      "o": "log/consensus_peaks_eps-%j.o",
+      "e": "log/consensus_peaks_eps-%j.e"
+    },
+    "consensus_peaks_histogram_metrics":
+    {
+      "o": "log/consensus_peaks_histogram_metrics-%j.o",
+      "e": "log/consensus_peaks_histogram_metrics-%j.e"
+    },
+    "consensus_peaks_exomepeak_sf":
+    {
+      "o": "log/consensus_peaks_exomepeak_sf-%j.o",
+      "e": "log/consensus_peaks_exomepeak_sf-%j.e"
+    },
+    "consensus_peaks_metpeak_sf":
+    {
+      "o": "log/consensus_peaks_metpeak_sf-%j.o",
+      "e": "log/consensus_peaks_metpeak_sf-%j.e"
+    },
+    "compile_bed":
+    {
+      "o": "log/compile_bed-%j.o",
+      "e": "log/compile_bed-%j.e"
+    },
+    "bed12ToBed6":
+    {
+      "o": "log/bed12ToBed6-%j.o",
+      "e": "log/bed12ToBed6-%j.e"
+    },
+    "create_saf":
+    {
+      "o": "log/create_saf-%j.o",
+      "e": "log/create_saf-%j.e"
+    },
+    "count_reads":
+    {
+      "mem": "16G",
+      "t": "5-00:00:00",
+      "c": "16",
+      "p": "all",
+      "o": "log/count_reads-%j.o",
+      "e": "log/count_reads-%j.e"
+    },
+}

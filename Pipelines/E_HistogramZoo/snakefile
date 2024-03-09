@@ -1,0 +1,65 @@
+import pandas as pd
+
+# The CPC-GENE Sample ids with both
+sample_id = pd.read_table("all_samples.txt")
+sample_id = sample_id["Sample"].tolist()
+
+# DATADIR
+DATADIR=""
+
+# Method
+Method=['Input', 'IP']
+
+# PeakCaller
+PeakCaller=['MeTPeak', 'exomePeak']
+
+# Tags for different versions of the software
+tag = 'V9_MetricVoting_OptimizationFunction_MaxGapOnly'
+
+hist_metrics = ["jaccard", "intersection", "ks", "mse", "chisq"]
+
+# Load R
+shell.prefix("module load R/4.0.0 ; ")
+
+rule all:
+    input:
+        expand("{DATADIR}/ConsensusPeaks/{tag}/G_exomePeak_SF/{PeakCaller}.{i}.MergedPeak.tsv", DATADIR=DATADIR, tag = tag, PeakCaller = "exomePeak", i=range(1, 1001, 1)),
+        expand("{DATADIR}/ConsensusPeaks/{tag}/F_MeTPeak_SF/{PeakCaller}.{i}.MergedPeak.tsv", DATADIR=DATADIR, tag = tag, PeakCaller = "MeTPeak", i=range(1, 1001, 1)),
+
+rule consensus_peaks_metpeak_sf:
+    input:
+        genelist="{DATADIR}/MeTPeak.genes.tsv",
+        peaks=expand("{DATADIR}/F_MeTPeak_Peaks_SS/{Sample_id}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id)
+    params:
+        i="{i}",
+        PeakCaller="{PeakCaller}",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf",
+        tag="{tag}"
+    output:
+        "{DATADIR}/ConsensusPeaks/{tag}/F_MeTPeak_SF/{PeakCaller}.{i}.MergedPeak.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/ConsensusPeaks.Refactoring.R "
+        "{params.i} "
+        "{params.PeakCaller} "
+        "{params.gtf} "
+        "{params.tag} "
+
+rule consensus_peaks_exomepeak_sf:
+    input:
+        genelist="{DATADIR}/exomePeak.genes.tsv",
+        peaks=expand("{DATADIR}/G_exomePeak_Peaks_SS/{Sample_id}/peak.bed", DATADIR=DATADIR, Sample_id=sample_id)
+    params:
+        i="{i}",
+        PeakCaller="{PeakCaller}",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf",
+        tag="{tag}"
+    output:
+        "{DATADIR}/ConsensusPeaks/{tag}/G_exomePeak_SF/{PeakCaller}.{i}.MergedPeak.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/ConsensusPeaks.Refactoring.R "
+        "{params.i} "
+        "{params.PeakCaller} "
+        "{params.gtf} "
+        "{params.tag} "

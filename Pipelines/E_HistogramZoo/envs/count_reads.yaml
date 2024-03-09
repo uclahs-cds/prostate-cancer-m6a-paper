@@ -1,0 +1,11 @@
+name: count_reads
+channels:
+  - conda-forge
+  - bioconda
+  - mvdbeek
+dependencies:
+  - bedtools=2.29.2
+  - subread=2.0.0
+  - ucsc_tools=332
+  - samtools=1.10
+  - homer=4.11
