@@ -1,0 +1,305 @@
+import pandas as pd
+
+# samples gives you individual samples with {sample_id}_Input or {sample_id}_IP
+samples = pd.read_table("CPCGENE_Samples_List.txt")
+samples = samples["sample"].tolist()
+
+# The CPC-GENE Sample ids with both
+sample_id = pd.read_table("short_samples.txt")
+sample_id = sample_id["Sample"].tolist()
+
+bigwig_method = ['Input.reverse', 'Input.forward', 'IP.reverse', 'IP.forward']
+
+# Working Directory
+# DATADIR:
+DATADIR=""
+
+PeakCaller = ['MeTPeak', 'exomePeak']
+
+tag = 'V9_MetricVoting_OptimizationFunction_MaxGapOnly'
+
+# batches
+batches = list(range(1, 1001))
+
+wildcard_constraints:
+    Sample_id="CPCG\d+",
+    tag='|'.join(tags)
+
+# Loading Modules
+shell.prefix("module load R/3.6.1 ; ")
+# shell.prefix("module load R/3.5.0 gcc/6.2.0 perl/5.30.0 rsem/1.3.0; ")
+
+# Latency wait
+shell.suffix("; sleep 5")
+
+rule all:
+    input:
+        # "count_reads.txt"
+        # Generating Compiled Peaks
+        expand("{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed12", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/{PeakCaller}.{tag}.peaks.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Generating BED6 files
+        expand("{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed6", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Generating SAF files
+        expand("{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.saf", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Count Reads in Peaks
+        expand("{DATADIR}/H_PeakCounts/{Method}/{PeakCaller}.{tag}.counts", DATADIR=DATADIR, Method=['IP', 'Input'], PeakCaller=PeakCaller, tag=tag),
+        # Peak Counts
+        expand("{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Raw.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.TPM.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Normalized.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Adjusted.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Peak Counts Hard
+        expand("{DATADIR}/Z_Matrices/{PeakCaller}.{tag}.Mask.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.Raw.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.TPM.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.Normalized.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.Adjusted.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Peak Counts Soft
+        expand("{DATADIR}/Z_Matrices/PeakCounts_SoftMask/{PeakCaller}.{tag}.PeakCounts_SoftMask.TPM.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts_SoftMask/{PeakCaller}.{tag}.PeakCounts_SoftMask.Normalized.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakCounts_SoftMask/{PeakCaller}.{tag}.PeakCounts_SoftMask.Adjusted.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Peak Sum Gene Counts
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts/{PeakCaller}.{tag}.PeakSum_GeneCounts.Raw.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts/{PeakCaller}.{tag}.PeakSum_GeneCounts.Normalized.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts/{PeakCaller}.{tag}.PeakSum_GeneCounts.Adjusted.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Peak Sum Gene Counts Hard
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Hard/{PeakCaller}.{tag}.PeakSum_GeneCounts_Hard.Raw.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Hard/{PeakCaller}.{tag}.PeakSum_GeneCounts_Hard.Normalized.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Hard/{PeakCaller}.{tag}.PeakSum_GeneCounts_Hard.Adjusted.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Peak Sum Gene Counts Soft
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Soft/{PeakCaller}.{tag}.PeakSum_GeneCounts_Soft.Normalized.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        expand("{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Soft/{PeakCaller}.{tag}.PeakSum_GeneCounts_Soft.Adjusted.tsv", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+        # Motifs
+        expand("{DATADIR}/H_PeakCounts/motifs/{PeakCaller}.{tag}/homerResults.html", DATADIR=DATADIR, PeakCaller=PeakCaller, tag=tag),
+
+
+# Generating Compiled Peaks
+rule compiled_peaks:
+    input:
+        expand("{DATADIR}/ConsensusPeaks/{{tag}}/F_MeTPeak_SF/MeTPeak.{i}.MergedPeak.tsv", DATADIR=DATADIR, i=batches),
+        expand("{DATADIR}/ConsensusPeaks/{{tag}}/G_exomePeak_SF/exomePeak.{i}.MergedPeak.tsv", DATADIR=DATADIR, i=batches)
+    params:
+        "{tag}"
+    output:
+        "{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed12",
+        "{DATADIR}/Z_Matrices/{PeakCaller}.{tag}.peaks.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/100_PeakCompile.R "
+        "{params} "
+
+# BED12 to BED6
+rule bed12ToBed6:
+    input:
+        "{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed12"
+    conda:
+        "envs/count_reads.yaml"
+    output:
+        "{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed6"
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
+
+# Create SAF File
+rule create_saf:
+    input:
+        "{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed6"
+    output:
+        "{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.saf"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/110_CompileSAF.R "
+        "{input} "
+        "{output} "
+
+# Count Reads
+rule count_reads:
+    input:
+        saf="{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.saf",
+        bams=expand("{DATADIR}/B_STAR_BAM/{Sample}_{{Method}}_Aligned.sortedByCoord.out.bam", DATADIR=DATADIR, Sample=sample_id)
+    output:
+        "{DATADIR}/H_PeakCounts/{Method}/{PeakCaller}.{tag}.counts",
+    params:
+        method="{Method}",
+        input_string=' '.join(expand("{DATADIR}/B_STAR_BAM/{Sample}_{{Method}}_Aligned.sortedByCoord.out.bam", DATADIR=DATADIR, Sample=sample_id))
+    conda:
+        "envs/count_reads.yaml"
+    shell:
+        "featureCounts "
+        "-O "
+        "-C "
+        "-p  "
+        "-f "
+        "-s 2 "
+        "-T 16 "
+        "-F SAF "
+        "--largestOverlap "
+        "-a {input.saf} "
+        "-o {output} "
+        "{params.input_string} "
+
+rule compile_counts:
+    input:
+        "{DATADIR}/H_PeakCounts/IP/{PeakCaller}.{tag}.counts"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}"
+    output:
+        "{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Raw.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.TPM.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Normalized.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts/{PeakCaller}.{tag}.PeakCounts.Adjusted.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/120_PeakCounts.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+rule compile_counts_hard:
+    input:
+        "{DATADIR}/H_PeakCounts/IP/{PeakCaller}.{tag}.counts"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}"
+    output:
+        "{DATADIR}/Z_Matrices/{PeakCaller}.{tag}.Mask.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.Raw.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.TPM.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.Normalized.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts_HardMask/{PeakCaller}.{tag}.PeakCounts_HardMask.Adjusted.tsv",
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/121_PeakCounts.Hard.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+rule compile_counts_soft:
+    input:
+        "{DATADIR}/H_PeakCounts/IP/{PeakCaller}.{tag}.counts"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}"
+    output:
+        "{DATADIR}/Z_Matrices/PeakCounts_SoftMask/{PeakCaller}.{tag}.PeakCounts_SoftMask.TPM.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts_SoftMask/{PeakCaller}.{tag}.PeakCounts_SoftMask.Normalized.tsv",
+        "{DATADIR}/Z_Matrices/PeakCounts_SoftMask/{PeakCaller}.{tag}.PeakCounts_SoftMask.Adjusted.tsv",
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/122_PeakCounts.Soft.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+rule compile_gene_counts:
+    input:
+        "{DATADIR}/H_PeakCounts/IP/{PeakCaller}.{tag}.counts"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}"
+    output:
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts/{PeakCaller}.{tag}.PeakSum_GeneCounts.Raw.tsv",
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts/{PeakCaller}.{tag}.PeakSum_GeneCounts.Normalized.tsv",
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts/{PeakCaller}.{tag}.PeakSum_GeneCounts.Adjusted.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/130_GeneLevelCounts.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+rule compile_gene_counts_hard:
+    input:
+        "{DATADIR}/H_PeakCounts/IP/{PeakCaller}.{tag}.counts"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}"
+    output:
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Hard/{PeakCaller}.{tag}.PeakSum_GeneCounts_Hard.Raw.tsv",
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Hard/{PeakCaller}.{tag}.PeakSum_GeneCounts_Hard.Normalized.tsv",
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Hard/{PeakCaller}.{tag}.PeakSum_GeneCounts_Hard.Adjusted.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/131_GeneLevelCounts.Hard.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+rule compile_gene_counts_soft:
+    input:
+        "{DATADIR}/H_PeakCounts/IP/{PeakCaller}.{tag}.counts"
+    params:
+        PeakCaller="{PeakCaller}",
+        tag="{tag}"
+    output:
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Soft/{PeakCaller}.{tag}.PeakSum_GeneCounts_Soft.Normalized.tsv",
+        "{DATADIR}/Z_Matrices/PeakSum_GeneCounts_Soft/{PeakCaller}.{tag}.PeakSum_GeneCounts_Soft.Adjusted.tsv"
+    shell:
+        "Rscript --vanilla "
+        "Rscripts/132_GeneLevelCounts.Soft.R "
+        "{params.PeakCaller} "
+        "{params.tag} "
+
+# MeTPeak HOMER
+rule fasta_from_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed"
+    output:
+        temp("{DATADIR}/tmpdir/{PeakCaller}.{tag}.fa")
+    shell:
+        "module load bedtools/2.27.1 ; "
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule shuffle_bed:
+    input:
+        bed="{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}.bed",
+        genomebed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+        chromsize="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/chrNameLength.txt",
+    output:
+        bed="{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}_shuffle.bed",
+    shell:
+        "module load bedtools/2.27.1 ; "
+        "shuffleBed -incl {input.genomebed} "
+        "-seed 12345 "
+        "-noOverlapping "
+        "-i {input.bed} "
+        "-g {input.chromsize} "
+        "> {output.bed} "
+
+rule fasta_from_shuffle_bed:
+    input:
+        fasta="{DATADIR}/GRCh38.p13_Build34/GRCh38.p13.genome.fa",
+        bed="{DATADIR}/H_PeakCounts/{PeakCaller}.{tag}_shuffle.bed",
+    output:
+        temp("{DATADIR}/tmpdir/{PeakCaller}.{tag}_shuffle.fa")
+    shell:
+        "module load bedtools/2.27.1 ; "
+        "bedtools getfasta "
+        "-fi {input.fasta} "
+        "-bed {input.bed} "
+        "-split " # Get 1 FASTA from BAM12s with exons
+        "-s "
+        "-fo {output}"
+
+rule HOMER:
+    input:
+        peak_fasta="{DATADIR}/tmpdir/{PeakCaller}.{tag}.fa",
+        random_fasta="{DATADIR}/tmpdir/{PeakCaller}.{tag}_shuffle.fa"
+    params:
+        outdir="{DATADIR}/H_PeakCounts/motifs/{PeakCaller}.{tag}",
+        homer_command="/cluster/home/helenzhu/code/snakemake_M6A_9_PeakMotifs/.snakemake/conda/82d51895/bin/findMotifs.pl"
+    output:
+        "{DATADIR}/H_PeakCounts/motifs/{PeakCaller}.{tag}/homerResults.html"
+    shell:
+        "{params.homer_command} "
+        "{input.peak_fasta} "
+        "fasta {params.outdir} "
+        "-fasta {input.random_fasta} "
+        "-p 8 "
+        "-len 5,6,7,8 "
+        "-S 8 "
+        "-rna "
