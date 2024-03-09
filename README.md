@@ -2,7 +2,6 @@
 
 ## Pipelines
 Code for processing data
-* TODO: Pipeline for QC compilation
 * TODO: Pipeline for m6A-SAC-seq data
 
 **A_ProcessingRawData**
@@ -23,20 +22,22 @@ Code for processing data
 
 **E_HistogramZoo**
 * Calling joint peaks using HistogramZoo
+
+**F_DataNormalization**
 * Normalizing and adjusting IP data by Input data
 
-**F_AllelicImbalance** (TODO)
+**G_AllelicImbalance**
 * Generating allelic-specific reads for Figure 3A
 
-**G_m6AQTLAnalysis**
+**H_m6AQTLAnalysis**
 * Quality control of germline variants
 * Testing Plink/PEER covariates
-* Generating input files and running MatrixQTL 
+* Generating input files and running MatrixQTL
 
-**H_HypoxiaCellLines**
+**I_HypoxiaCellLines**
 * Processing hypoxia cell line meRIP-seq data
 
-**I_TumourNormal**
+**J_TumourNormal**
 * Processing tumour normal meRIP-seq data
 
 
@@ -45,16 +46,24 @@ Code for processing data
 **Figure 1**
 * TODO: Add the code for Figure 1G
 
+**Figure 2**
+* TODO: Add the code
+
 **Figure 3**
 * The code for Figure 3B is provided in the code for Supplementary Figure 4D-F
 * The code for Figure 3C is provided in the code for Figure 1A
 * The code for Figure 3E-F is provided in the code for SupplementaryFigure 4G
 
+**Figure 4**
+* TODO: Add the code
+
+**Figure 5**
+* TODO: Add the code
+
 ## Supplementary Figures
 
 **Supplementary Figure 1**
 * Supplementary Figures 1A-B were drawn rather than coded
-* TODO: Supplementary Figure 1C: QC data not provided, compiled in other scripts
 * Supplementary Figure 1E - Data generated from D_RNAseqGermlineVariants pipeline
 
 **Supplementary Figure 2**
@@ -65,4 +74,5 @@ Code for processing data
 * Supplementary Figures 4A & 4J were drawn rather than coded
 * The code for Supplementary Figure 4I is provided in the code for Figure 1A
 
-**Supplementary Figure 5** (TODO)
+**Supplementary Figure 5**
+* TODO: Add code for Supplementary Figure 5E-H
