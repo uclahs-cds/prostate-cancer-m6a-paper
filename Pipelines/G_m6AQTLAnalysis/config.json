@@ -1,0 +1,258 @@
+{
+    "__default__":
+    {
+      "mem": "8G",
+      "t": "0-08:00:00",
+      "c": "1",
+      "p": "all",
+      "o": "log/snakemake-m6A-%j.o",
+      "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "replace_asterisk_ref":
+    {
+      "o": "log/replace_asterisk_ref-%j.o",
+      "e": "log/replace_asterisk_ref-%j.e"
+    },
+    "filter_chromosome":
+    {
+      "o": "log/filter_chromosome-%j.o",
+      "e": "log/filter_chromosome-%j.e"
+    },
+    "rename_chromosome":
+    {
+      "o": "log/rename_chromosome-%j.o",
+      "e": "log/rename_chromosome-%j.e"
+    },
+    "rename_samples":
+    {
+      "o": "log/rename_samples-%j.o",
+      "e": "log/rename_samples-%j.e"
+    },
+    "extract_samples":
+    {
+      "o": "log/extract_samples-%j.o",
+      "e": "log/extract_samples-%j.e"
+    },
+    "split_multiallelic_snps":
+    {
+      "o": "log/split_multiallelic_snps-%j.o",
+      "e": "log/split_multiallelic_snps-%j.e"
+    },
+    "filter_biallelic_snps":
+    {
+      "o": "log/filter_biallelic_snps-%j.o",
+      "e": "log/filter_biallelic_snps-%j.e"
+    },
+    "filter_maf":
+    {
+      "o": "log/filter_maf-%j.o",
+      "e": "log/filter_maf-%j.e"
+    },
+    "annovar_dbsnp":
+    {
+      "mem": "48G",
+      "t": "1-00:00:00",
+      "c": "10",
+      "p": "himem",
+      "o": "log/annovar_dbsnp-%j.o",
+      "e": "log/annovar_dbsnp-%j.e"
+    },
+    "extract_annovar_subset":
+    {
+      "o": "log/extract_annovar_subset-%j.o",
+      "e": "log/extract_annovar_subset-%j.e"
+    },
+    "extract_dbsnp_subset":
+    {
+      "o": "log/extract_dbsnp_subset-%j.o",
+      "e": "log/extract_dbsnp_subset-%j.e"
+    },
+    "extract_dbsnp_positions":
+    {
+      "o": "log/extract_dbsnp_positions-%j.o",
+      "e": "log/extract_dbsnp_positions-%j.e"
+    },
+    "compress_annovar_vcf":
+    {
+      "o": "log/compress_annovar_vcf-%j.o",
+      "e": "log/compress_annovar_vcf-%j.e"
+    },
+    "reassign_ids":
+    {
+      "o": "log/reassign_ids-%j.o",
+      "e": "log/reassign_ids-%j.e"
+    },
+    "dbsnp_matching":
+    {
+      "mem": "100G",
+      "t": "1-00:00:00",
+      "c": "1",
+      "p": "veryhimem",
+      "o": "log/dbsnp_matching-%j.o",
+      "e": "log/dbsnp_matching-%j.e"
+    },
+    "dbsnp_formatting":
+    {
+      "o": "log/dbsnp_formatting-%j.o",
+      "e": "log/dbsnp_formatting-%j.e"
+    },
+    "correct_header":
+    {
+      "o": "log/correct_header-%j.o",
+      "e": "log/correct_header-%j.e"
+    },
+    "exclude_sample":
+    {
+      "o": "log/exclude_sample-%j.o",
+      "e": "log/exclude_sample-%j.e"
+    },
+    "reassign_ids_to_final":
+    {
+      "o": "log/reassign_ids_to_final-%j.o",
+      "e": "log/reassign_ids_to_final-%j.e"
+    },
+    "plink_ldprune":
+    {
+      "o": "log/plink_ldprune-%j.o",
+      "e": "log/plink_ldprune-%j.e"
+    },
+    "plink_pca":
+    {
+      "o": "log/plink_pca-%j.o",
+      "e": "log/plink_pca-%j.e"
+    },
+    "plink_pca_ld_trimmed":
+    {
+      "o": "log/plink_pca_ld_trimmed-%j.o",
+      "e": "log/plink_pca_ld_trimmed-%j.e"
+    },
+    "plink_relatedness":
+    {
+      "o": "log/plink_relatedness-%j.o",
+      "e": "log/plink_relatedness-%j.e"
+    },
+    "hardy_weinberg":
+    {
+      "o": "log/hardy_weinberg-%j.o",
+      "e": "log/hardy_weinberg-%j.e"
+    },
+    "allele_frequency":
+    {
+      "o": "log/allele_frequency-%j.o",
+      "e": "log/allele_frequency-%j.e"
+    },
+    "missingness_individual":
+    {
+      "o": "log/missingness_individual-%j.o",
+      "e": "log/missingness_individual-%j.e"
+    },
+    "missingness_site":
+    {
+      "o": "log/missingness_site-%j.o",
+      "e": "log/missingness_site-%j.e"
+    },
+    "individual_depth":
+    {
+      "o": "log/individual_depth-%j.o",
+      "e": "log/individual_depth-%j.e"
+    },
+    "site_depth":
+    {
+      "o": "log/site_depth-%j.o",
+      "e": "log/site_depth-%j.e"
+    },
+    "snp_quality":
+    {
+      "o": "log/snp_quality-%j.o",
+      "e": "log/snp_quality-%j.e"
+    },
+    "generate_snp_filter":
+    {
+      "o": "log/generate_snp_filter-%j.o",
+      "e": "log/generate_snp_filter-%j.e"
+    },
+    "filter_qc_snps":
+    {
+      "o": "log/filter_qc_snps-%j.o",
+      "e": "log/filter_qc_snps-%j.e"
+    },
+    "extract_risk_snps":
+    {
+      "o": "log/extract_risk_snps-%j.o",
+      "e": "log/extract_risk_snps-%j.e"
+    },
+    "format_covariates":
+    {
+      "t": "0-00:10:00",
+      "o": "log/format_covariates-%j.o",
+      "e": "log/format_covariates-%j.e"
+    },
+    "generate_input_expression":
+    {
+      "mem": "10G",
+      "t": "0-02:00:00",
+      "c": "1",
+      "p": "all",
+      "o": "log/generate_input_expression-%j.o",
+      "e": "log/generate_input_expression-%j.e"
+    },
+    "prune_input_snps":
+    {
+      "o": "log/prune_input_snps-%j.o",
+      "e": "log/prune_input_snps-%j.e"
+    },
+    "extract_input_snps":
+    {
+      "o": "log/extract_input_snps-%j.o",
+      "e": "log/extract_input_snps-%j.e"
+    },
+    "generate_input_snps":
+    {
+      "mem": "100G",
+      "t": "0-02:00:00",
+      "c": "1",
+      "p": "veryhimem",
+      "o": "log/generate_input_snps-%j.o",
+      "e": "log/generate_input_snps-%j.e"
+    },
+    "peer":
+    {
+      "t": "5-00:00:00",
+      "o": "log/peer-%j.o",
+      "e": "log/peer-%j.e"
+    },
+    "run_matrixqtl_sig":
+    {
+      "mem": "16G",
+      "t": "5-00:00:00",
+      "c": "1",
+      "p": "all",
+      "o": "log/run_matrixqtl_sig-%j.o",
+      "e": "log/run_matrixqtl_sig-%j.e"
+    },
+    "run_matrixqtl_cis":
+    {
+      "mem": "16G",
+      "t": "5-00:00:00",
+      "c": "1",
+      "p": "all",
+      "o": "log/run_matrixqtl_cis-%j.o",
+      "e": "log/run_matrixqtl_cis-%j.e"
+    },
+    "make_input_files":
+    {
+      "o": "log/make_input_files-%j.o",
+      "e": "log/make_input_files-%j.e"
+    },
+    "make_binary":
+    {
+      "o": "log/make_binary-%j.o",
+      "e": "log/make_binary-%j.e"
+    },
+    "filter_m6A_sites_snps":
+    {
+      "o": "log/filter_m6A_sites_snps-%j.o",
+      "e": "log/filter_m6A_sites_snps-%j.e"
+    },
+}
