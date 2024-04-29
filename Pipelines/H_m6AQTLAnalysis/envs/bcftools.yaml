@@ -1,0 +1,8 @@
+name: count_reads
+channels:
+  - conda-forge
+  - bioconda
+  - mvdbeek
+dependencies:
+  - bcftools=1.13
+  - picard=2.25.6

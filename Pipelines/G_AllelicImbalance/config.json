@@ -1,0 +1,56 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/AE1-%j.o",
+        "e": "log/AE1-%j.e"
+
+    },
+    "trim_adaptors":
+    {
+      "o": "log/trim_adaptors-%j.o",
+      "e": "log/trim_adaptors-%j.e"
+    },
+    "prepare_sample_vcf":
+    {
+      "o": "log/prepare_sample_vcf-%j.o",
+      "e": "log/prepare_sample_vcf-%j.e"
+    },
+    "map_star":
+    {
+      "t": "7-00:00:00",
+      "mem": "48G",
+      "c": "20",
+      "p": "himem",
+      "o": "log/map_star-%j.o",
+      "e": "log/map_star-%j.e"
+    },
+    "filter_bam":
+    {
+      "o": "log/filter_bam-%j.o",
+      "e": "log/filter_bam-%j.e"
+    },
+    "index_vcf":
+    {
+      "o": "log/index_vcf-%j.o",
+      "e": "log/index_vcf-%j.e"
+    },
+    "add_read_groups":
+    {
+      "t": "0-10:00:00",
+      "mem": "16G",
+      "c": "2",
+      "p": "all",
+      "o": "log/snakemake-m6A-add_read_groups-%j.o",
+      "e": "log/snakemake-m6A-add_read_groups-%j.e"
+    },
+    "allelic_expression_filter":
+    {
+      "o": "log/allelic_expression_filter-%j.o",
+      "e": "log/allelic_expression_filter-%j.e"
+    },
+
+  }

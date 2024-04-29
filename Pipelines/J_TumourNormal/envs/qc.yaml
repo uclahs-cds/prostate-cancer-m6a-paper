@@ -1,0 +1,10 @@
+name: qc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - RSeQC=3.0.1
+  - samtools=1.10
+  - picard=2.21.7
+  - bedtools=2.27.1
+  - deeptools=3.4.3

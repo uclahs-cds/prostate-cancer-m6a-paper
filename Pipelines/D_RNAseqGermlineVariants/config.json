@@ -1,0 +1,128 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "0-3:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A_Germline-%j.o",
+        "e": "log/snakemake-m6A_Germline-%j.e"
+
+    },
+    "make_exons_bed":
+    {
+        "t": "0-10:00:00",
+        "mem": "16G",
+        "c": "2",
+        "p": "all",
+        "o": "log/snakemake-m6A-make_exons_bed-%j.o",
+        "e": "log/snakemake-m6A-make_exons_bed-%j.e"
+    },
+    "create_genome_dictionary":
+    {
+        "t": "0-10:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-create_genome_dictionary-%j.o",
+        "e": "log/snakemake-m6A-create_genome_dictionary-%j.e"
+    },
+    "add_read_groups":
+    {
+        "t": "0-10:00:00",
+        "mem": "16G",
+        "c": "2",
+        "p": "all",
+        "o": "log/snakemake-m6A-add_read_groups-%j.o",
+        "e": "log/snakemake-m6A-add_read_groups-%j.e"
+    },
+    "mark_duplicates":
+    {
+        "t": "0-10:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-MarkDuplicates-%j.o",
+        "e": "log/snakemake-m6A-MarkDuplicates-%j.e"
+    },
+    "split_reads":
+    {
+        "t": "0-10:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-split_reads-%j.o",
+        "e": "log/snakemake-m6A-split_reads-%j.e"
+    },
+    "recalibrate_bases":
+    {
+        "t": "0-10:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-recalibrate_bases-%j.o",
+        "e": "log/snakemake-m6A-recalibrate_bases-%j.e"
+    },
+    "print_reads":
+    {
+        "t": "0-10:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-print_reads-%j.o",
+        "e": "log/snakemake-m6A-print_reads-%j.e"
+    },
+    "haplotype_caller":
+    {
+        "t": "2-00:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-haplotype_caller-%j.o",
+        "e": "log/snakemake-m6A-haplotype_caller-%j.e"
+    },
+    "variant_quality_filter":
+    {
+        "t": "1-00:00:00",
+        "mem": "48G",
+        "c": "2",
+        "p": "himem",
+        "o": "log/snakemake-m6A-variant_quality_filter-%j.o",
+        "e": "log/snakemake-m6A-variant_quality_filter-%j.e"
+    },
+    "rename_chromosomes":
+    {
+        "o": "log/snakemake-m6A-rename_chromosomes-%j.o",
+        "e": "log/snakemake-m6A-rename_chromosomes-%j.e"
+    },
+    "generate_reference_sdf":
+    {
+        "o": "log/snakemake-m6A-generate_reference_sdf-%j.o",
+        "e": "log/snakemake-m6A-generate_reference_sdf-%j.e"
+    },
+    "compress_master_vcf":
+    {
+        "o": "log/snakemake-m6A-compress_master_vcf-%j.o",
+        "e": "log/snakemake-m6A-compress_master_vcf-%j.e"
+    },
+    "index_master_vcf":
+    {
+        "o": "log/snakemake-m6A-index_master_vcf-%j.o",
+        "e": "log/snakemake-m6A-index_master_vcf-%j.e"
+    },
+    "compress_sample_vcfs":
+    {
+        "o": "log/snakemake-m6A-compress_sample_vcfs-%j.o",
+        "e": "log/snakemake-m6A-compress_sample_vcfs-%j.e"
+    },
+    "index_sample_vcfs":
+    {
+        "o": "log/snakemake-m6A-index_sample_vcfs-%j.o",
+        "e": "log/snakemake-m6A-index_sample_vcfs-%j.e"
+    },
+    "compare_vcfs":
+    {
+        "o": "log/snakemake-m6A-compare_vcfs-%j.o",
+        "e": "log/snakemake-m6A-compare_vcfs-%j.e"
+    },
+}

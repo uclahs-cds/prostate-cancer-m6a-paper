@@ -1,0 +1,221 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A-%j.o",
+        "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "cutadapt":
+    {
+      "o": "log/cutadapt-%j.o",
+      "e": "log/cutadapt-%j.e"
+    },
+    "map_star":
+    {
+      "t": "7-00:00:00",
+      "mem": "48G",
+      "c": "20",
+      "p": "himem",
+      "o": "log/map_star-%j.o",
+      "e": "log/map_star-%j.e"
+    },
+    "map_star_mapping_rate":
+    {
+      "t": "7-00:00:00",
+      "mem": "48G",
+      "c": "20",
+      "p": "himem",
+      "o": "log/map_star_mapping_rate-%j.o",
+      "e": "log/map_star_mapping_rate-%j.e"
+    },
+    "index_bam":
+    {
+        "o": "log/index_bam-%j.o",
+        "e": "log/index_bam-%j.e"
+    },
+    "bam_stat":
+    {
+        "o": "log/bam_stat-%j.o",
+        "e": "log/bam_stat-%j.e"
+    },
+    "inner_distance":
+    {
+        "o": "log/inner_distance-%j.o",
+        "e": "log/inner_distance-%j.e"
+    },
+    "read_distribution":
+    {
+        "o": "log/read_distribution-%j.o",
+        "e": "log/read_distribution-%j.e"
+    },
+    "read_duplication":
+    {
+        "t": "7-00:00:00",
+        "mem": "42G",
+        "c": "20",
+        "p": "himem",
+        "o": "log/read_duplication-%j.o",
+        "e": "log/read_duplication-%j.e"
+    },
+    "split_bam":
+    {
+        "o": "log/split_bam-%j.o",
+        "e": "log/split_bam-%j.e"
+    },
+    "chrome_idx":
+    {
+        "o": "log/chrome_idx-%j.o",
+        "e": "log/chrome_idx-%j.e"
+    },
+    "flagstat":
+    {
+        "o": "log/flagstat-%j.o",
+        "e": "log/flagstat-%j.e"
+    },
+    "mark_duplicates":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "1",
+        "p": "himem",
+        "o": "log/mark_duplicates-%j.o",
+        "e": "log/mark_duplicates-%j.e"
+    },
+    "encode_qc_sort":
+    {
+        "o": "log/encode_qc_sort-%j.o",
+        "e": "log/encode_qc_sort-%j.e"
+    },
+    "encode_metrics":
+    {
+        "o": "log/encode_metrics-%j.o",
+        "e": "log/encode_metrics-%j.e"
+    },
+    "dupradar":
+    {
+        "c": "16",
+        "o": "log/dupradar-%j.o",
+        "e": "log/dupradar-%j.e"
+    },
+    "rsem":
+    {
+        "t": "0-10:00:00",
+        "mem": "16G",
+        "c": "16",
+        "p": "all",
+        "o": "log/rsem-%j.o",
+        "e": "log/rsem-%j.e"
+    },
+    "forward_bw":
+    {
+        "c": "5",
+        "o": "log/forward_bw-%j.o",
+        "e": "log/forward_bw-%j.e"
+    },
+    "reverse_bw":
+    {
+        "c": "5",
+        "o": "log/reverse_bw-%j.o",
+        "e": "log/reverse_bw-%j.e"
+    },
+    "extract_EK12":
+    {
+        "o": "log/extract_EK12-%j.o",
+        "e": "log/extract_EK12-%j.e"
+    },
+    "calculate_EK12_reads":
+    {
+        "o": "log/calculate_EK12_reads-%j.o",
+        "e": "log/calculate_EK12_reads-%j.e"
+    },
+    "make_one_bigwig":
+    {
+        "c": "10",
+        "o": "log/make_one_bigwig-%j.o",
+        "e": "log/make_one_bigwig-%j.e"
+    },
+    "extract_R1_reads":
+    {
+      "o": "log/extract_R1_reads-%j.o",
+      "e": "log/extract_R1_reads-%j.e"
+    },
+    "metpeak":
+    {
+      "o": "log/metpeak-%j.o",
+      "e": "log/metpeak-%j.e"
+    },
+    "exomepeak":
+    {
+      "o": "log/exomepeak-%j.o",
+      "e": "log/exomepeak-%j.e"
+    },
+    "MeTPeak_fasta_from_bed":
+    {
+        "o": "log/MeTPeak_fasta_from_bed-%j.o",
+        "e": "log/MeTPeak_fasta_from_bed-%j.e"
+    },
+    "MeTPeak_shuffle_bed":
+    {
+        "o": "log/MeTPeak_shuffle_bed-%j.o",
+        "e": "log/MeTPeak_shuffle_bed-%j.e"
+    },
+    "MeTPeak_fasta_from_shuffle_bed":
+    {
+        "o": "log/MeTPeak_fasta_from_shuffle_bed-%j.o",
+        "e": "log/MeTPeak_fasta_from_shuffle_bed-%j.e"
+    },
+    "MeTPeak_HOMER":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "16",
+        "p": "himem",
+        "o": "log/MeTPeak_HOMER-%j.o",
+        "e": "log/MeTPeak_HOMER-%j.e"
+    },
+    "exomePeak_fasta_from_bed":
+    {
+        "o": "log/exomePeak_fasta_from_bed-%j.o",
+        "e": "log/exomePeak_fasta_from_bed-%j.e"
+    },
+    "exomePeak_shuffle_bed":
+    {
+        "o": "log/exomePeak_shuffle_bed-%j.o",
+        "e": "log/exomePeak_shuffle_bed-%j.e"
+    },
+    "exomePeak_fasta_from_shuffle_bed":
+    {
+        "o": "log/exomePeak_fasta_from_shuffle_bed-%j.o",
+        "e": "log/exomePeak_fasta_from_shuffle_bed-%j.e"
+    },
+    "exomePeak_HOMER":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "16",
+        "p": "himem",
+        "o": "log/exomePeak_HOMER-%j.o",
+        "e": "log/exomePeak_HOMER-%j.e"
+    },
+    "GuitarPlot":
+    {
+        "o": "log/GuitarPlot-%j.o",
+        "e": "log/GuitarPlot-%j.e"
+    },
+    "count_reads_xenograft":
+    {
+      "c": "16",
+      "o": "log/count_reads_xenograft-%j.o",
+      "e": "log/count_reads_xenograft-%j.e"
+    },
+    "count_reads_tumournormal":
+    {
+      "c": "16",
+      "o": "log/count_reads_tumournormal-%j.o",
+      "e": "log/count_reads_tumournormal-%j.e"
+    },
+}

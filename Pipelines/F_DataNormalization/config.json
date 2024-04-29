@@ -1,0 +1,87 @@
+{
+    "__default__":
+    {
+        "mem": "16G",
+        "t": "5-00:00:00",
+        "c": "1",
+        "p": "all",
+        "o": "log/snakemake-m6A-%j.o",
+        "e": "log/snakemake-m6A-%j.e"
+
+    },
+    "compiled_peaks":
+    {
+        "o": "log/compiled_peaks-%j.o",
+        "e": "log/compiled_peaks-%j.e"
+    },
+    "bed12ToBed6":
+    {
+        "o": "log/bed12ToBed6-%j.o",
+        "e": "log/bed12ToBed6-%j.e"
+    },
+    "create_saf":
+    {
+        "o": "log/create_saf-%j.o",
+        "e": "log/create_saf-%j.e"
+    },
+    "count_reads":
+    {
+        "c": "16",
+        "o": "log/count_reads-%j.o",
+        "e": "log/count_reads-%j.e"
+    },
+    "compile_counts":
+    {
+        "o": "log/compile_counts-%j.o",
+        "e": "log/compile_counts-%j.e"
+    },
+    "compile_counts_hard":
+    {
+        "o": "log/compile_counts_hard-%j.o",
+        "e": "log/compile_counts_hard-%j.e"
+    },
+    "compile_counts_soft":
+    {
+        "o": "log/compile_counts_soft-%j.o",
+        "e": "log/compile_counts_soft-%j.e"
+    },
+    "compile_gene_counts":
+    {
+        "o": "log/compile_gene_counts-%j.o",
+        "e": "log/compile_gene_counts-%j.e"
+    },
+    "compile_gene_counts_hard":
+    {
+        "o": "log/compile_gene_counts_hard-%j.o",
+        "e": "log/compile_gene_counts_hard-%j.e"
+    },
+    "compile_gene_counts_soft":
+    {
+        "o": "log/compile_gene_counts_soft-%j.o",
+        "e": "log/compile_gene_counts_soft-%j.e"
+    },
+    "fasta_from_bed":
+    {
+        "o": "log/fasta_from_bed-%j.o",
+        "e": "log/fasta_from_bed-%j.e"
+    },
+    "shuffle_bed":
+    {
+        "o": "log/shuffle_bed-%j.o",
+        "e": "log/shuffle_bed-%j.e"
+    },
+    "fasta_from_shuffle_bed":
+    {
+        "o": "log/fasta_from_shuffle_bed-%j.o",
+        "e": "log/fasta_from_shuffle_bed-%j.e"
+    },
+    "HOMER":
+    {
+        "t": "0-10:00:00",
+        "mem": "42G",
+        "c": "16",
+        "p": "himem",
+        "o": "log/HOMER-%j.o",
+        "e": "log/HOMER-%j.e"
+    },
+}

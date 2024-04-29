@@ -1,0 +1,258 @@
+import pandas as pd
+
+# The CPC-GENE Sample ids with both
+sample_id = pd.read_table("CPCGENE_M6A_Samples_Complete.tsv")
+sample_id = sample_id["Sample"].tolist()
+
+# Germline Samples
+germline_samples = pd.read_table("all_germline_samples.txt")
+germline_samples = germline_samples["x"].tolist()
+
+# Data directory
+DATADIR=""
+GERMLINEDIR=""
+
+# Notes:
+# 1. If you're installing gatk from conda, you have to download the java script
+# and do gatk3-register the .jar script after activating your conda environment
+# https://console.cloud.google.com/storage/browser/gatk-software/package-archive/gatk?pli=1
+# 2. split_reads needs a relatively large RAM but this has to be changed in the java command
+# Use -Xms256M -Xmx50G in conda environment opts/gatk3.py wrapper
+# 3. Because we use EK12 reads and generate the reference genome through concattenating
+# files, the order of the dictionary will be lexicographically wrong, hence use -U ALL
+# in split_reads in order to make it work
+# 4. "MAX_FILE_HANDLES=1000 " "SORTING_COLLECTION_SIZE_RATIO=0.1 " are used to limit maxInMemory
+# requirements in mark_duplicates
+
+rule all:
+    input:
+        expand("{GERMLINEDIR}/Z_ReferenceGenome/gencode.v24lift37.exons.bed", GERMLINEDIR=GERMLINEDIR),
+        expand("{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.dict", GERMLINEDIR=GERMLINEDIR),
+        expand("{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa.fai", GERMLINEDIR=GERMLINEDIR),
+        expand("{GERMLINEDIR}/A_AddReadGroups/{sample}_ReadGroups.out.bam", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/B_PicardMarkDup_BAMs/{sample}.bam", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/B_PicardMarkDup_BAMs/{sample}.metrics", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/C_SplitReadsBams/{sample}_split_reads.bam", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/D_RecalibrateBases/{sample}.recal.table", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/D_RecalibrateBases/{sample}.recal.bam", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/E_HaplotypeCaller/{sample}.hc.vcf", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/F_VariantQuality/{sample}.variant_quality.vcf", GERMLINEDIR=GERMLINEDIR, sample=sample_id),
+        expand("{GERMLINEDIR}/Z_ReferenceGenome/SDF/", GERMLINEDIR=GERMLINEDIR),
+        expand("{GERMLINEDIR}/F_VariantQuality/{Sample}.variant_quality.vcf.gz", GERMLINEDIR=GERMLINEDIR, Sample=sample_id),
+        expand("{GERMLINEDIR}/F_VariantQuality/{Sample}.variant_quality.vcf.gz.tbi", GERMLINEDIR=GERMLINEDIR, Sample=sample_id),
+        expand("{GERMLINEDIR}/H_FullComparisons/{Sample_a}_{Sample_b}", GERMLINEDIR=GERMLINEDIR, Sample_a=germline_samples, Sample_b=germline_samples)
+        expand("{GERMLINEDIR}/G_Comparisons/{Sample_a}_{Sample_b}", GERMLINEDIR=GERMLINEDIR, Sample_a=germline_samples, Sample_b=germline_samples)
+
+
+rule make_exons_bed:
+    input:
+        "{GERMLINEDIR}/Z_ReferenceGenome/gencode.v24lift37.annotation.gtf"
+    output:
+        "{GERMLINEDIR}/Z_ReferenceGenome/gencode.v24lift37.exons.bed"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "grep -P \"^[^\t]+\t[^\t]+\texon\" {input} | bedtools sort -i stdin | "
+        "bedtools merge -i stdin > {output}"
+
+rule index_genome:
+    input:
+        "{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa"
+    output:
+        "{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa.fai"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "samtools faidx {input}"
+
+rule create_genome_dictionary:
+    input:
+        "{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa"
+    output:
+        "{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.dict"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "picard CreateSequenceDictionary "
+        "R={input} "
+        "O={output}"
+
+rule add_read_groups:
+    input:
+        "{DATADIR}/STAR_BAM/{{sample}}_Input_Aligned.sortedByCoord.out.bam".format(DATADIR=DATADIR)
+    output:
+        "{GERMLINEDIR}/A_AddReadGroups/{sample}_ReadGroups.out.bam"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "picard AddOrReplaceReadGroups "
+        "I={input} "
+        "O={output} "
+        "SO=coordinate RGID=id "
+        "RGLB=library RGPL=ILLUMINA RGPU=machine RGSM=sample"
+
+rule mark_duplicates:
+    input:
+        "{GERMLINEDIR}/A_AddReadGroups/{sample}_ReadGroups.out.bam"
+    output:
+        bam="{GERMLINEDIR}/B_PicardMarkDup_BAMs/{sample}.bam",
+        metrics="{GERMLINEDIR}/B_PicardMarkDup_BAMs/{sample}.metrics"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "picard MarkDuplicates "
+        "I={input} "
+        "O={output.bam} "
+        "CREATE_INDEX=true "
+        "MAX_FILE_HANDLES=1000 "
+        "SORTING_COLLECTION_SIZE_RATIO=0.1 "
+        "VALIDATION_STRINGENCY=SILENT "
+        "M={output.metrics}"
+
+rule split_reads:
+    input:
+        bam="{GERMLINEDIR}/B_PicardMarkDup_BAMs/{sample}.bam",
+        refgen="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa",
+        refdict="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.dict",
+        refidx="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa.fai"
+    output:
+        "{GERMLINEDIR}/C_SplitReadsBams/{sample}_split_reads.bam"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "gatk3 -T SplitNCigarReads "
+        "-I {input.bam} "
+        "-o {output} "
+        "-R {input.refgen} "
+        "-rf ReassignOneMappingQuality "
+        "-RMQF 255 "
+        "-RMQT 60 "
+        "-U ALL"
+
+rule recalibrate_bases:
+    input:
+        bam="{GERMLINEDIR}/C_SplitReadsBams/{sample}_split_reads.bam",
+        refgen="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa",
+        dbsnp="{GERMLINEDIR}/Y_DBSNP/All_20180423.vcf.gz",
+        dbsnp_idx="{GERMLINEDIR}/Y_DBSNP/All_20180423.vcf.gz.tbi",
+        exons_bed="{GERMLINEDIR}/Z_ReferenceGenome/gencode.v24lift37.exons.bed"
+    output:
+        "{GERMLINEDIR}/D_RecalibrateBases/{sample}.recal.table"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "gatk3 -T BaseRecalibrator "
+        "-I {input.bam} "
+        "-o {output} "
+        "-R {input.refgen} "
+        "-knownSites {input.dbsnp} "
+        "-L {input.exons_bed} "
+        "-U ALL"
+
+rule print_reads:
+    input:
+        bam="{GERMLINEDIR}/C_SplitReadsBams/{sample}_split_reads.bam",
+        refgen="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa",
+        recal="{GERMLINEDIR}/D_RecalibrateBases/{sample}.recal.table"
+    output:
+        "{GERMLINEDIR}/D_RecalibrateBases/{sample}.recal.bam"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "gatk3 -T PrintReads "
+        "-I {input.bam} "
+        "-o {output} "
+        "-R {input.refgen} "
+        "-BQSR {input.recal} "
+        "-U ALL"
+
+rule haplotype_caller:
+    input:
+        bam="{GERMLINEDIR}/D_RecalibrateBases/{sample}.recal.bam",
+        refgen="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa"
+    output:
+        "{GERMLINEDIR}/E_HaplotypeCaller/{sample}.hc.vcf",
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "gatk3 -T HaplotypeCaller "
+        "-I {input.bam} "
+        "-o {output} "
+        "-R {input.refgen} "
+        "-dontUseSoftClippedBases "
+        "-stand_call_conf 20.0 "
+        "-U ALL"
+
+rule variant_quality_filter:
+    input:
+        vcf="{GERMLINEDIR}/E_HaplotypeCaller/{sample}.hc.vcf",
+        refgen="{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa"
+    output:
+        "{GERMLINEDIR}/F_VariantQuality/{sample}.variant_quality.vcf"
+    conda:
+        "envs/rnaseq_variants.yaml"
+    shell:
+        "gatk3 -T VariantFiltration "
+        "-V {input.vcf} "
+        "-o {output} "
+        "-R {input.refgen} "
+        "-window 35 "
+        "-cluster 3 "
+        "-filterName FS -filter \"FS > 30.0\" "
+        "-filterName QD -filter \"QD < 2.0\" "
+        "-U ALL"
+
+rule generate_reference_sdf:
+    input:
+        "{GERMLINEDIR}/Z_ReferenceGenome/GRCh37_ek12.primary_assembly.genome.fa"
+    output:
+        directory("{GERMLINEDIR}/Z_ReferenceGenome/SDF/")
+    conda:
+        "envs/compare_snps.yaml"
+    shell:
+        "rtg format "
+        "-o SDF "
+        "{input} "
+
+rule compress_sample_vcfs:
+    input:
+        "{GERMLINEDIR}/F_VariantQuality/{Sample}.variant_quality.vcf"
+    output:
+        "{GERMLINEDIR}/F_VariantQuality/{Sample}.variant_quality.vcf.gz",
+    conda:
+        "envs/compare_snps.yaml"
+    shell:
+        "bgzip -c {input} > {output}"
+
+rule index_sample_vcfs:
+    input:
+        "{GERMLINEDIR}/F_VariantQuality/{Sample}.variant_quality.vcf.gz"
+    output:
+        "{GERMLINEDIR}/F_VariantQuality/{Sample}.variant_quality.vcf.gz.tbi"
+    conda:
+        "envs/compare_snps.yaml"
+    shell:
+        "tabix -p vcf {input}"
+
+rule compare_vcfs:
+    input:
+        sample_vcf="{GERMLINEDIR}/F_VariantQuality/{Sample_a}.variant_quality.vcf.gz",
+        sample_vcf_index="{GERMLINEDIR}/F_VariantQuality/{Sample_a}.variant_quality.vcf.gz.tbi",
+        master_vcf="{DATADIR}/AdditionalDatasets/CPCGENE_genotype_162_renamed_chrs.vcf.gz".format(DATADIR=DATADIR),
+        master_vcf_index="{DATADIR}/AdditionalDatasets/CPCGENE_genotype_162_renamed_chrs.vcf.gz.tbi".format(DATADIR=DATADIR),
+        sdf="{GERMLINEDIR}/Z_ReferenceGenome/SDF/"
+    output:
+        directory("{GERMLINEDIR}/H_FullComparisons/{Sample_a}_{Sample_b}")
+    conda:
+        "envs/compare_snps.yaml"
+    params:
+        sample_a="{Sample_a}",
+        sample_b="{Sample_b}"
+    shell:
+        "rtg vcfeval "
+        "-b {input.master_vcf} "
+        "-c {input.sample_vcf} "
+        "-t {input.sdf} "
+        "-o {output} "
+        "--sample={params.sample_b}-B1,sample "
+        "--output-mode='roc-only' "

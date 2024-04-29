@@ -1,0 +1,11 @@
+name: compare_snps
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - bcftools=1.10.2
+  - rtg-tools=3.10.1
+  - samtools=1.10
+  - tabix=0.2.6
+  - bedtools=2.29.2
+  - vcftools=0.1.16

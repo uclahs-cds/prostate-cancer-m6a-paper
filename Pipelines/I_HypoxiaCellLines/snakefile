@@ -1,0 +1,313 @@
+import pandas as pd
+
+# The CPC-GENE Sample ids with both
+sample_id = pd.read_table("Samples.Input.IP.tsv")
+sample_id = sample_id["Sample"].tolist()
+
+samples = pd.read_table("Samples.No.Tag.tsv")
+samples= samples["Sample"].tolist()
+
+# Defining Directories
+DATADIR=""
+
+# Loading Modules
+shell.prefix("module load R/4.0.0 ; ")
+
+rule all:
+    input:
+        # cutadapt
+        expand("{DATADIR}/A_fastqs_trimmed/{sample_id}.log", DATADIR=DATADIR, sample_id=sample_id),
+        # FASTQC
+        expand("{DATADIR}/A_FASTQC/{sample_id}_{R}_fastqc.html", DATADIR=DATADIR, sample_id=sample_id, R = ['R1', 'R2']),
+        # Mapping
+        expand("{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam", DATADIR=DATADIR, sample_id=sample_id),
+        # QC
+        expand("{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam.bai", DATADIR=DATADIR, sample_id=sample_id),
+        expand("{DATADIR}/B_STAR_BAM/{sample_id}_inner_distance.e", DATADIR=DATADIR, sample_id=sample_id),
+         expand("{DATADIR}/B_STAR_BAM/{sample_id}_infer_experiment.o", DATADIR=DATADIR, sample_id=sample_id),
+        # Counting Reads
+        expand("{DATADIR}/E_RSEM_output/{sample_id}.genes.results", DATADIR=DATADIR, sample_id=sample_id),
+        # peak calling
+        expand("{DATADIR}/F_MeTPeak_Peaks/{sample}/peak.bed", DATADIR=DATADIR, sample=samples),
+        expand("{DATADIR}/G_exomePeak_Peaks/{sample}/peak.bed", DATADIR =DATADIR, sample=samples),
+        expand("{DATADIR}/F_MeTPeak_Peaks/{sample}/peak.bed6", DATADIR=DATADIR, sample=samples),
+        expand("{DATADIR}/G_exomePeak_Peaks/{sample}/peak.bed6", DATADIR=DATADIR, sample=samples),
+        # BigWigs
+        expand("{DATADIR}/BigWigs/{sample_id}.forward.bigWig", DATADIR=DATADIR, sample_id=sample_id),
+        expand("{DATADIR}/BigWigs/{sample_id}.reverse.bigWig", DATADIR=DATADIR, sample_id=sample_id),
+
+# Trim Adapters
+rule cutadapt:
+    input:
+        R1="{DATADIR}/FASTQs/{sample_id}_R1.fastq.gz",
+        R2="{DATADIR}/FASTQs/{sample_id}_R2.fastq.gz",
+    output:
+        R1=temp("{DATADIR}/A_fastqs_trimmed/{sample_id}_R1.fastq.gz"),
+        R2=temp("{DATADIR}/A_fastqs_trimmed/{sample_id}_R2.fastq.gz"),
+        log="{DATADIR}/A_fastqs_trimmed/{sample_id}.log"
+    conda:
+        "envs/mapping.yaml"
+    params:
+        min_len="50",
+        adapter_f="AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+        adapter_r="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+    shell:
+        "cutadapt "
+        "-a {params.adapter_f} "
+        "-A {params.adapter_r} "
+        "-m {params.min_len} "
+        "--report=minimal "
+        "-o {output.R1} "
+        "-p {output.R2} {input.R1} {input.R2} > {output.log}"
+
+# FASTQC
+rule fastqc:
+    input:
+        "{DATADIR}/A_fastqs_trimmed/{sample_id}_{R}.fastq.gz"
+    output:
+        directory("{DATADIR}/A_FASTQC/{sample_id}_{R}_fastqc"),
+        "{DATADIR}/A_FASTQC/{sample_id}_{R}_fastqc.html",
+        "{DATADIR}/A_FASTQC/{sample_id}_{R}_fastqc.zip"
+    conda:
+        "envs/mapping.yaml"
+    params:
+        outdir="{DATADIR}/A_FASTQC/",
+        tmpdir="{DATADIR}/tmpdir/"
+    shell:
+        "fastqc "
+        "--threads 5 "
+        "--extract "
+        "--outdir {params.outdir} "
+        "--dir {params.tmpdir} "
+        "{input} "
+
+# Mapping
+rule map_star:
+    input:
+        genome="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12/Genome",
+        R1="{DATADIR}/A_fastqs_trimmed/{sample_id}_R1.fastq.gz",
+        R2="{DATADIR}/A_fastqs_trimmed/{sample_id}_R2.fastq.gz",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam",
+        transcriptome_bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.toTranscriptome.out.bam",
+        final_log="{DATADIR}/B_STAR_BAM/{sample_id}_Log.final.out",
+        log="{DATADIR}/B_STAR_BAM/{sample_id}.o"
+    params:
+        sample_id="{sample_id}",
+        index="{DATADIR}/GRCh38.p13_Build34_STAR_wEK12"
+    shell:
+        "STAR "
+        "--runThreadN 10 "
+        "--genomeDir {params.index} "
+        "--chimSegmentMin 10 "
+        "--readFilesCommand zcat "
+        "--sjdbGTFfile {input.gtf} "
+        "--outFileNamePrefix {DATADIR}/B_STAR_BAM/{params.sample_id}_ "
+        "--outSAMorder Paired "
+        "--quantMode GeneCounts TranscriptomeSAM "
+        "--outSAMtype BAM SortedByCoordinate "
+        "--outReadsUnmapped Fastx "
+        "--outSAMattributes All "
+        "--twopassMode Basic "
+        "--readFilesIn {input.R1} {input.R2} > {output.log}"
+
+# Indexing Bam File
+rule index_bam:
+    input:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam"
+    output:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam.bai"
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "samtools index "
+        "{input} "
+        "{output}"
+
+# Inner Distance
+rule inner_distance:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam",
+        bai="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam.bai",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12"
+    conda:
+        "envs/mapping.yaml"
+    params:
+        output_dir="{DATADIR}/B_STAR_BAM/{sample_id}"
+    output:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_inner_distance.e"
+    shell:
+        "inner_distance.py -i {input.bam} "
+        "-o {params.output_dir} "
+        "-r {input.bed} &> {output}"
+
+# Infer Experiment
+rule infer_experiment:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam",
+        bed="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.bed12",
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_infer_experiment.o"
+    shell:
+        "infer_experiment.py -i {input.bam} "
+        "-r {input.bed} > {output}"
+
+rule rsem:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.toTranscriptome.out.bam",
+        chrlist="{DATADIR}/RSEM_Reference/hg38.chrlist",
+        grp="{DATADIR}/RSEM_Reference/hg38.grp",
+        idx="{DATADIR}/RSEM_Reference/hg38.idx.fa",
+        n2gidx="{DATADIR}/RSEM_Reference/hg38.n2g.idx.fa",
+        seq="{DATADIR}/RSEM_Reference/hg38.seq",
+        ti="{DATADIR}/RSEM_Reference/hg38.ti",
+        transcripts="{DATADIR}/RSEM_Reference/hg38.transcripts.fa"
+    conda:
+        "envs/count_reads.yaml"
+    params:
+        reference_genome="{DATADIR}/RSEM_Reference/hg38",
+        sample_id="{sample_id}"
+    output:
+        "{DATADIR}/E_RSEM_output/{sample_id}.isoforms.results",
+        "{DATADIR}/E_RSEM_output/{sample_id}.genes.results",
+    shell:
+        "rsem-calculate-expression "
+        "--bam "
+        "--no-bam-output "
+        "--paired-end "
+        "--strandedness forward "
+        "--num-threads 16 "
+        "{input.bam} "
+        "{params.reference_genome} "
+        "{DATADIR}/E_RSEM_output/{params.sample_id} "
+
+rule mark_duplicates:
+    input:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam"
+    output:
+        metrics="{DATADIR}/D_PicardMarkDup_BAMs/{sample_id}.metrics",
+        bam=temp("{DATADIR}/D_PicardMarkDup_BAMs/{sample_id}.bam"),
+        bai=temp("{DATADIR}/D_PicardMarkDup_BAMs/{sample_id}.bai"),
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "picard MarkDuplicates "
+        "I={input} "
+        "O={output.bam} "
+        "CREATE_INDEX=true "
+        "MAX_FILE_HANDLES=1000 "
+        "SORTING_COLLECTION_SIZE_RATIO=0.1 "
+        "VALIDATION_STRINGENCY=SILENT "
+        "REMOVE_DUPLICATES=false "
+        "M={output.metrics}"
+        # bam="{DATADIR}/PicardMarkDup_BAMs/{Sample_id}.bam",
+
+rule extract_R1_reads:
+    input:
+        "{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam"
+    output:
+        temp("{DATADIR}/tmpdir/{sample_id}_R1.bam")
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "samtools "
+        "view -hbf 64 {input} > {output}"
+
+# MeTPeak
+rule metpeak:
+    input:
+        ip_bam="{DATADIR}/tmpdir/{sample}_IP_R1.bam",
+        input_bam="{DATADIR}/tmpdir/{sample}_Input_R1.bam",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    params:
+        sample="{sample}"
+    output:
+        "{DATADIR}/F_MeTPeak_Peaks/{sample}/peak.bed",
+        "{DATADIR}/F_MeTPeak_Peaks/{sample}/peak.xls"
+    shell:
+        "Rscript --vanilla Rscripts/MeTPeak.R "
+        "{params.sample} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/F_MeTPeak_Peaks/ "
+
+# ExomePeak
+rule exomepeak:
+    input:
+        ip_bam="{DATADIR}/tmpdir/{sample}_IP_R1.bam",
+        input_bam="{DATADIR}/tmpdir/{sample}_Input_R1.bam",
+        gtf="{DATADIR}/GRCh38.p13_Build34/gencode.v34.chr_patch_hapl_scaff.annotation.gtf"
+    params:
+        sample="{sample}"
+    output:
+        "{DATADIR}/G_exomePeak_Peaks/{sample}/peak.bed",
+        "{DATADIR}/G_exomePeak_Peaks/{sample}/peak.xls"
+    shell:
+        "Rscript --vanilla Rscripts/exomePeak.R "
+        "{params.sample} "
+        "{input.ip_bam} "
+        "{input.input_bam} "
+        "{input.gtf} "
+        "{DATADIR}/G_exomePeak_Peaks/ "
+
+rule Bed12toBed6_MeTPeak:
+    input:
+        "{DATADIR}/F_MeTPeak_Peaks/{sample}/peak.bed"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/F_MeTPeak_Peaks/{sample}/peak.bed6"
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
+
+rule Bed12toBed6_ExomePeak:
+    input:
+        "{DATADIR}/G_exomePeak_Peaks/{sample}/peak.bed"
+    conda:
+        "envs/mapping.yaml"
+    output:
+        "{DATADIR}/G_exomePeak_Peaks/{sample}/peak.bed6"
+    shell:
+        "bed12ToBed6 "
+        "-i {input} > "
+        "{output} "
+
+# NOTE: The strands are reversed due to the fact that it's a forward-stranded library preparation
+# deeptools documentation: https://deeptools.readthedocs.io/en/develop/content/tools/bamCoverage.html
+# bai="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam.bai"
+rule forward_bw:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam",
+    output:
+        bigWig="{DATADIR}/BigWigs/{sample_id}.forward.bigWig"
+    shell:
+        "module load deeptools/3.5.1 ; "
+        "bamCoverage "
+        "--filterRNAstrand reverse "
+        "--normalizeUsing RPKM "
+        "-p 5 "
+        "-b {input.bam} "
+        "-o {output.bigWig}"
+
+# bai="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam.bai"
+rule reverse_bw:
+    input:
+        bam="{DATADIR}/B_STAR_BAM/{sample_id}_Aligned.sortedByCoord.out.bam",
+    output:
+        bigWig="{DATADIR}/BigWigs/{sample_id}.reverse.bigWig"
+    shell:
+        "module load deeptools/3.5.1 ; "
+        "bamCoverage "
+        "--filterRNAstrand forward "
+        "--normalizeUsing RPKM "
+        "-p 5 "
+        "-b {input.bam} "
+        "-o {output.bigWig}"
