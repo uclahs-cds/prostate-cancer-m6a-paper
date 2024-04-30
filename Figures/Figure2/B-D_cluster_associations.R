@@ -1,8 +1,3 @@
-# Figure B
-# Figure 2C
-# Figure 2D
-# Supplementary Figure 5A
-
 library(BoutrosLab.plotting.general);
 library(BoutrosLab.utilities);
 
@@ -26,13 +21,6 @@ clinical <- read.delim(
 	file = '2020-02-25_CPC-GENE_clinical_from_database.txt',
 	as.is = TRUE
 	);
-
-buffa <- read.delim(
-	file = 'hypoxia_scores_buffa.txt',
-	as.is = TRUE
-	);
-
-clinical$hypoxia_buffa_score <- buffa$scores[match(clinical$patient_id, buffa$patient.IDs)];
 
 annot <- clinical[match(sample.clusters$V1, clinical$patient_id), ];
 annot$cluster <- paste0('P', sample.clusters$V2);
@@ -119,7 +107,7 @@ cluster.barplot$par.settings$axis.components <- list(
 	left = list(pad1 = 0.3)
 	);
 png(
-	filename = generate.filename('m6A', 'm6A_clusters_vs_clinical_barplot', 'png'),
+	filename = Figure2B.png',
 	height = 1,
 	width = 2.25,
 	units = 'in',
@@ -139,7 +127,7 @@ plot.data <- table(
 
 IDC.plot <- plot.general.contingency.table(
 	plot.data = plot.data,
-	filename = generate.filename('m6A', 'm6A_clusters_vs_IDC', 'png'),
+	filename = 'Figure2D.png',
 	height = 2,
 	width = 1.65,
 	xlabel = 'IDC/CA',
@@ -164,7 +152,7 @@ plot.data <- table(
 
 plot.general.contingency.table(
 	plot.data = plot.data,
-	filename = generate.filename('m6A', 'm6A_clusters_vs_pT', 'png'),
+	filename = 'Figure2C.png',
 	xlabel = 'pT',
 	ylabel = '',
 	height = 2,
