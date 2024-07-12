@@ -47,7 +47,7 @@ Code for processing data
 * TODO: Add the code for Figure 1G
 
 **Figure 2**
-* TODO: Add the code
+* TODO: Add the code for Figure 2F
 
 **Figure 3**
 * The code for Figure 3B is provided in the code for Supplementary Figure 4D-F
@@ -69,6 +69,9 @@ Code for processing data
 **Supplementary Figure 2**
 * Supplementary Figure 2C-D - Data generated from C_SubsamplingPeakAnalysis pipeline
 * Supplementary Figures 2G-J are addressed by Figure1/B-E_GeneProfilePlots.R
+
+**Supplementary Figure 3**
+* TODO: Add the code for SFigure F-H
 
 **Supplementary Figure 4**
 * Supplementary Figures 4A & 4J were drawn rather than coded
