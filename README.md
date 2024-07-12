@@ -70,12 +70,12 @@ Code for processing data
 * Supplementary Figure 2C-D - Data generated from C_SubsamplingPeakAnalysis pipeline
 * Supplementary Figures 2G-J are addressed by Figure1/B-E_GeneProfilePlots.R
 
-**Supplementary Figure 3**
-* TODO: Add the code for SFigure F-H
-
-**Supplementary Figure 4**
-* Supplementary Figures 4A & 4J were drawn rather than coded
-* The code for Supplementary Figure 4I is provided in the code for Figure 1A
-
 **Supplementary Figure 5**
-* TODO: Add code for Supplementary Figure 5E-H
+* TODO: Add the code for S5Figure F-H
+
+**Supplementary Figure 7**
+* Supplementary Figures 7A & 7J were drawn rather than coded
+* The code for Supplementary Figure 7I is provided in the code for Figure 1A
+
+**Supplementary Figure 8**
+* TODO: Add code for Supplementary Figure 8E-H
