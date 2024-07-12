@@ -47,7 +47,7 @@ Code for processing data
 * TODO: Add the code for Figure 1G
 
 **Figure 2**
-* TODO: Add the code for Figure 1F
+* TODO: Add the code for Figure 2F
 
 **Figure 3**
 * The code for Figure 3B is provided in the code for Supplementary Figure 4D-F
