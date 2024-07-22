@@ -67,7 +67,9 @@
 **Supplementary Figure 4**
 * Code provided for bigWig processing for producing Figure 4 D & E
 
+**Supplementary Figure 5**
+* Supplementary Figures 5A & 5B are from the ConsensusClusterPlus package
+
 **Supplementary Figure 7**
 * Supplementary Figures 7A & 7J were drawn rather than coded
 * The code for Supplementary Figure 7I is provided in the code for Figure 1A
-

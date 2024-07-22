@@ -33,7 +33,7 @@ plot.my.scatterplot(
 	var1 = clinical.filtered$age_at_treatment,
 	var2 = data.overlap[id, ],
 	labels = c('Age (at treatment)', paste0(id, '   ', gene)),
-	file = 'SupplementaryFigure3E.png',
+	file = 'SupplementaryFigure6B.png',
 	xat = xat,
 	xaxis.lab = xaxis.lab,
 	xlab.label = as.expression(bquote(bold(.(gene)~'m'^'6'*'A abundance'))),
