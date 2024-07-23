@@ -1,8 +1,6 @@
 # Code for the prostate cancer m6A profiling study
-
+# Notes shown below where applicable
 ## Pipelines
-Code for processing data
-* TODO: Pipeline for m6A-SAC-seq data
 
 **A_ProcessingRawData**
 * Read alignment and quality control
@@ -40,14 +38,10 @@ Code for processing data
 **J_TumourNormal**
 * Processing tumour normal meRIP-seq data
 
+**SAC-seqProcessing**
+* Data processed following code from https://github.com/shunliubio/m6A-SAC-seq_new_protocol
 
 ## Figures
-
-**Figure 1**
-* TODO: Add the code for Figure 1G
-
-**Figure 2**
-* TODO: Add the code for Figure 2F
 
 **Figure 3**
 * The code for Figure 3B is provided in the code for Supplementary Figure 4D-F
@@ -55,10 +49,10 @@ Code for processing data
 * The code for Figure 3E-F is provided in the code for SupplementaryFigure 4G
 
 **Figure 4**
-* TODO: Add the code
+* Code provided for Figure 4A
 
 **Figure 5**
-* TODO: Add the code
+* Code provided for Figure 5B, E, J, K
 
 ## Supplementary Figures
 
@@ -70,12 +64,12 @@ Code for processing data
 * Supplementary Figure 2C-D - Data generated from C_SubsamplingPeakAnalysis pipeline
 * Supplementary Figures 2G-J are addressed by Figure1/B-E_GeneProfilePlots.R
 
-**Supplementary Figure 3**
-* TODO: Add the code for SFigure F-H
-
 **Supplementary Figure 4**
-* Supplementary Figures 4A & 4J were drawn rather than coded
-* The code for Supplementary Figure 4I is provided in the code for Figure 1A
+* Code provided for bigWig processing for producing Figure 4 D & E
 
 **Supplementary Figure 5**
-* TODO: Add code for Supplementary Figure 5E-H
+* Supplementary Figures 5A & 5B are from the ConsensusClusterPlus package
+
+**Supplementary Figure 7**
+* Supplementary Figures 7A & 7J were drawn rather than coded
+* The code for Supplementary Figure 7I is provided in the code for Figure 1A
