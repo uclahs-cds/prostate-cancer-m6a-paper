@@ -1,5 +1,5 @@
-# Code for the prostate cancer m6A profiling study
-# Notes shown below where applicable
+# Associated code for "The Landscape of N6-Methyladenosine in Localized Primary Prostate Cancer"
+## Notes shown below where applicable
 ## Pipelines
 
 **A_ProcessingRawData**
