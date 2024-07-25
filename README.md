@@ -70,6 +70,10 @@
 **Supplementary Figure 5**
 * Supplementary Figures 5A & 5B are from the ConsensusClusterPlus package
 
+**Supplementary Figure 6**
+* code for Supplementary Figure 6C is in Figure1/A_Overview.R (see idc_boxplot)
+* code for Supplementary Figure 6D is in Figure1/A_Overview.R (see clinical_dotmap)
+
 **Supplementary Figure 7**
 * Supplementary Figures 7A & 7J were drawn rather than coded
 * The code for Supplementary Figure 7I is provided in the code for Figure 1A
