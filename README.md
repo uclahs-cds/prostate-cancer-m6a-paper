@@ -54,26 +54,26 @@
 **Figure 5**
 * Code provided for Figure 5B, E, J, K
 
-## Supplementary Figures
+## Extended Figures
 
-**Supplementary Figure 1**
+**Extended Figure 1**
 * Supplementary Figures 1A-B were drawn rather than coded
 * Supplementary Figure 1E - Data generated from D_RNAseqGermlineVariants pipeline
 
-**Supplementary Figure 2**
+**Extended Figure 2**
 * Supplementary Figure 2C-D - Data generated from C_SubsamplingPeakAnalysis pipeline
 * Supplementary Figures 2G-J are addressed by Figure1/B-E_GeneProfilePlots.R
 
-**Supplementary Figure 4**
+**Extended Figure 4**
 * Code provided for bigWig processing for producing Figure 4 D & E
 
-**Supplementary Figure 5**
+**Extended Figure 5**
 * Supplementary Figures 5A & 5B are from the ConsensusClusterPlus package
 
-**Supplementary Figure 6**
+**Extended Figure 6**
 * code for Supplementary Figure 6C is in Figure1/A_Overview.R (see idc_boxplot)
 * code for Supplementary Figure 6D is in Figure1/A_Overview.R (see clinical_dotmap)
 
-**Supplementary Figure 7**
+**Extended Figure 7**
 * Supplementary Figures 7A & 7J were drawn rather than coded
 * The code for Supplementary Figure 7I is provided in the code for Figure 1A
